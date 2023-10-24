@@ -5927,7 +5927,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('agg_mdz',zoo(2)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_lgz',zoo(3)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_smt',zoo(4)%agg, 0.0)                         ! s-1 (moles N kg)-1
-    call g_tracer_add_param('agg_lgt',zoo(5)%agg, 0.075*1e6/sperd)               ! s-1 (moles N kg)-1
+    call g_tracer_add_param('agg_lgt',zoo(5)%agg, 0.065*1e6/sperd)               ! s-1 (moles N kg)-1
     !
     !----------------------------------------------------------------------
     ! Partitioning of zooplankton ingestion to other compartments
@@ -5936,43 +5936,43 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('phi_det_smz',zoo(1)%phi_det, 0.0)               ! dimensionless
     call g_tracer_add_param('phi_det_mdz',zoo(2)%phi_det, 0.5)               ! dimensionless
     call g_tracer_add_param('phi_det_lgz',zoo(3)%phi_det, 1.0)               ! dimensionless
-    call g_tracer_add_param('phi_det_smt',zoo(4)%phi_det, 0.85)               ! dimensionless
+    call g_tracer_add_param('phi_det_smt',zoo(4)%phi_det, 1.0)               ! dimensionless
     call g_tracer_add_param('phi_det_lgt',zoo(5)%phi_det, 1.0)               ! dimensionless
 
     call g_tracer_add_param('phi_ldon_smz',zoo(1)%phi_ldon, 0.7*1.0)         ! dimensionless
     call g_tracer_add_param('phi_ldon_mdz',zoo(2)%phi_ldon, 0.7*0.5)         ! dimensionless
     call g_tracer_add_param('phi_ldon_lgz',zoo(3)%phi_ldon, 0.7*0.0)         ! dimensionless
-    call g_tracer_add_param('phi_ldon_smt',zoo(4)%phi_ldon, 0.7*0.15)         ! dimensionless
+    call g_tracer_add_param('phi_ldon_smt',zoo(4)%phi_ldon, 0.7*0.0)         ! dimensionless
     call g_tracer_add_param('phi_ldon_lgt',zoo(5)%phi_ldon, 0.7*0.0)         ! dimensionless
 
     call g_tracer_add_param('phi_ldop_smz',zoo(1)%phi_ldop, 0.65*1.0)        ! dimensionless
     call g_tracer_add_param('phi_ldop_mdz',zoo(2)%phi_ldop, 0.65*0.5)        ! dimensionless
     call g_tracer_add_param('phi_ldop_lgz',zoo(3)%phi_ldop, 0.65*0.0)        ! dimensionless
-    call g_tracer_add_param('phi_ldop_smt',zoo(4)%phi_ldop, 0.65*0.15)        ! dimensionless
+    call g_tracer_add_param('phi_ldop_smt',zoo(4)%phi_ldop, 0.65*0.0)        ! dimensionless
     call g_tracer_add_param('phi_ldop_lgt',zoo(5)%phi_ldop, 0.65*0.0)        ! dimensionless
 
     call g_tracer_add_param('phi_srdon_smz',zoo(1)%phi_srdon, 0.1*1.0)       ! dimensionless
     call g_tracer_add_param('phi_srdon_mdz',zoo(2)%phi_srdon, 0.1*0.5)       ! dimensionless
     call g_tracer_add_param('phi_srdon_lgz',zoo(3)%phi_srdon, 0.1*0.0)       ! dimensionless
-    call g_tracer_add_param('phi_srdon_smt',zoo(4)%phi_srdon, 0.1*0.15)       ! dimensionless
+    call g_tracer_add_param('phi_srdon_smt',zoo(4)%phi_srdon, 0.1*0.0)       ! dimensionless
     call g_tracer_add_param('phi_srdon_lgt',zoo(5)%phi_srdon, 0.1*0.0)       ! dimensionless
 
     call g_tracer_add_param('phi_srdop_smz',zoo(1)%phi_srdop, 0.15*1.0)      ! dimensionless
     call g_tracer_add_param('phi_srdop_mdz',zoo(2)%phi_srdop, 0.15*0.5)      ! dimensionless
     call g_tracer_add_param('phi_srdop_lgz',zoo(3)%phi_srdop, 0.15*0.0)      ! dimensionless
-    call g_tracer_add_param('phi_srdop_smt',zoo(4)%phi_srdop, 0.15*0.15)      ! dimensionless
+    call g_tracer_add_param('phi_srdop_smt',zoo(4)%phi_srdop, 0.15*0.0)      ! dimensionless
     call g_tracer_add_param('phi_srdop_lgt',zoo(5)%phi_srdop, 0.15*0.0)      ! dimensionless
 
     call g_tracer_add_param('phi_sldon_smz',zoo(1)%phi_sldon, 0.2*1.0)       ! dimensionless
     call g_tracer_add_param('phi_sldon_mdz',zoo(2)%phi_sldon, 0.2*0.5)       ! dimensionless
     call g_tracer_add_param('phi_sldon_lgz',zoo(3)%phi_sldon, 0.2*0.0)       ! dimensionless
-    call g_tracer_add_param('phi_sldon_smt',zoo(4)%phi_sldon, 0.2*0.15)       ! dimensionless
+    call g_tracer_add_param('phi_sldon_smt',zoo(4)%phi_sldon, 0.2*0.0)       ! dimensionless
     call g_tracer_add_param('phi_sldon_lgt',zoo(5)%phi_sldon, 0.2*0.0)       ! dimensionless
 
     call g_tracer_add_param('phi_sldop_smz',zoo(1)%phi_sldop, 0.2*1.0)       ! dimensionless
     call g_tracer_add_param('phi_sldop_mdz',zoo(2)%phi_sldop, 0.2*0.5)       ! dimensionless
     call g_tracer_add_param('phi_sldop_lgz',zoo(3)%phi_sldop, 0.2*0.0)       ! dimensionless
-    call g_tracer_add_param('phi_sldop_smt',zoo(4)%phi_sldop, 0.2*0.15)       ! dimensionless
+    call g_tracer_add_param('phi_sldop_smt',zoo(4)%phi_sldop, 0.2*0.0)       ! dimensionless
     call g_tracer_add_param('phi_sldop_lgt',zoo(5)%phi_sldop, 0.2*0.0)       ! dimensionless
 
     call g_tracer_add_param('phi_nh4_smz',zoo(1)%phi_nh4, 0.30)            ! dimensionless
