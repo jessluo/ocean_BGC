@@ -5920,7 +5920,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('kae_smz',zoo(1)%kae, 1.0e+10)                     ! moles N kg-1
     call g_tracer_add_param('kae_mdz',zoo(2)%kae, 1.0e+10)                     ! moles N kg-1
     call g_tracer_add_param('kae_lgz',zoo(3)%kae, 1.0e+10)                     ! moles N kg-1
-    call g_tracer_add_param('kae_smt',zoo(4)%kae, 2.2e-6)                      ! moles N kg-1
+    call g_tracer_add_param('kae_smt',zoo(4)%kae, 1.41e-6)                     ! moles N kg-1
     call g_tracer_add_param('kae_lgt',zoo(5)%kae, 2.63e-6)                     ! moles N kg-1
 
     call g_tracer_add_param('agg_smz',zoo(1)%agg, 0.0)                         ! s-1 (moles N kg)-1
