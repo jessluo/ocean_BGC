@@ -5895,8 +5895,8 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('bresp_smz',zoo(1)%bresp, 0.9*0.020 / sperd)         ! s-1
     call g_tracer_add_param('bresp_mdz',zoo(2)%bresp, 0.008 / sperd)             ! s-1
     call g_tracer_add_param('bresp_lgz',zoo(3)%bresp, 0.0032 / sperd)            ! s-1
-    call g_tracer_add_param('bresp_smt',zoo(4)%bresp, 0.06 / sperd)             ! s-1
-    call g_tracer_add_param('bresp_lgt',zoo(5)%bresp, 0.015 / sperd)         ! s-1
+    call g_tracer_add_param('bresp_smt',zoo(4)%bresp, 0.06 / sperd)              ! s-1
+    call g_tracer_add_param('bresp_lgt',zoo(5)%bresp, 0.01 / sperd)              ! s-1
 
     call g_tracer_add_param('phi_aresp_smz',zoo(1)%phi_aresp, 0.3)               ! dimensionless
     call g_tracer_add_param('phi_aresp_mdz',zoo(2)%phi_aresp, 0.3)               ! dimensionless
