@@ -5733,7 +5733,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('alk_2_n_denit', cobalt%alk_2_n_denit, 552.0/472.0)             ! eq. alk mol NO3-1
     call g_tracer_add_param('p_2_n_static_Di', phyto(DIAZO)%p_2_n_static,1.0/40.0 )         ! mol P mol N-1
     call g_tracer_add_param('p_2_n_static_Lg', phyto(LARGE)%p_2_n_static,1.0/12.0 )         ! mol P mol N-1
-    call g_tracer_add_param('p_2_n_static_Sm', phyto(SMALL)%p_2_n_static,1.0/20.0 )         ! mol P mol N-1
+    call g_tracer_add_param('p_2_n_static_Sm', phyto(SMALL)%p_2_n_static,1.0/24.0 )         ! mol P mol N-1
     call g_tracer_add_param('si_2_n_static_Lg', phyto(LARGE)%si_2_n_static, 2.0)            ! mol Si mol N-1
     call g_tracer_add_param('si_2_n_max_Lg', phyto(LARGE)%si_2_n_max, 3.0)                  ! mol Si mol N-1
     call g_tracer_add_param('ca_2_n_arag', cobalt%ca_2_n_arag, 0.030 * 106.0 / 16.0)        ! mol Ca mol N-1
@@ -5744,7 +5744,7 @@ write (stdlogunit, generic_COBALT_nml)
     ! Zooplankton Stoichiometry - presently static
     !-----------------------------------------------------------------------
     !
-    call g_tracer_add_param('q_p_2_n_smz',zoo(1)%q_p_2_n, 1.0/18.0)          ! mol P mol N-1
+    call g_tracer_add_param('q_p_2_n_smz',zoo(1)%q_p_2_n, 1.0/20.0)          ! mol P mol N-1
     call g_tracer_add_param('q_p_2_n_mdz',zoo(2)%q_p_2_n, 1.0/16.0)          ! mol P mol N-1
     call g_tracer_add_param('q_p_2_n_lgz',zoo(3)%q_p_2_n, 1.0/16.0)          ! mol P mol N-1
     ! tunicate N:P ratios are unknown; assume Redfield
@@ -5773,10 +5773,10 @@ write (stdlogunit, generic_COBALT_nml)
     ! Phytoplankton and bacterial losses to viruses
     !-----------------------------------------------------------------------
     !
-    call g_tracer_add_param('vir_Sm',phyto(SMALL)%vir, 0.20*1e6/sperd )  ! s-1 (mole N kg)-1
+    call g_tracer_add_param('vir_Sm',phyto(SMALL)%vir, 0.10*1e6/sperd )  ! s-1 (mole N kg)-1
     call g_tracer_add_param('vir_Di',phyto(DIAZO)%vir, 0.0 )        ! s-1 (mole N kg)-1
     call g_tracer_add_param('vir_Lg',phyto(LARGE)%vir, 0.0 )        ! s-1 (mole N kg)-1
-    call g_tracer_add_param('vir_Bact',bact(1)%vir,   0.20*1e6/sperd)   ! s-1 (mole N kg)-1
+    call g_tracer_add_param('vir_Bact',bact(1)%vir,   0.10*1e6/sperd)   ! s-1 (mole N kg)-1
     call g_tracer_add_param('ktemp_vir',cobalt%vir_ktemp, 0.063)       ! C-1
     !
     !-----------------------------------------------------------------------
@@ -5843,7 +5843,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('smz_ipa_lgz',zoo(1)%ipa_lgz, 0.0)          ! dimensionless
     call g_tracer_add_param('smz_ipa_smt',zoo(1)%ipa_smt, 0.0)          ! dimensionless
     call g_tracer_add_param('smz_ipa_lgt',zoo(1)%ipa_lgt, 0.0)          ! dimensionless
-    call g_tracer_add_param('smz_ipa_bact',zoo(1)%ipa_bact,0.25)        ! dimensionless
+    call g_tracer_add_param('smz_ipa_bact',zoo(1)%ipa_bact,0.5)        ! dimensionless
     call g_tracer_add_param('smz_ipa_det',zoo(1)%ipa_det, 0.0)          ! dimensionless
     ! innate prey availability for medium zooplankton
     call g_tracer_add_param('mdz_ipa_smp',zoo(2)%ipa_smp, 0.0)          ! dimensionless
@@ -5920,57 +5920,57 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('kae_smz',zoo(1)%kae, 1.0e+10)                     ! moles N kg-1
     call g_tracer_add_param('kae_mdz',zoo(2)%kae, 1.0e+10)                     ! moles N kg-1
     call g_tracer_add_param('kae_lgz',zoo(3)%kae, 1.0e+10)                     ! moles N kg-1
-    call g_tracer_add_param('kae_smz',zoo(4)%kae, 3.25e-6)                     ! moles N kg-1
-    call g_tracer_add_param('kae_lgz',zoo(5)%kae, 5e-6)                      ! moles N kg-1
+    call g_tracer_add_param('kae_smt',zoo(4)%kae, 3.25e-6)                     ! moles N kg-1
+    call g_tracer_add_param('kae_lgt',zoo(5)%kae, 5e-6)                      ! moles N kg-1
 
     call g_tracer_add_param('agg_smz',zoo(1)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_mdz',zoo(2)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_lgz',zoo(3)%agg, 0.0)                         ! s-1 (moles N kg)-1
-    call g_tracer_add_param('agg_smz',zoo(4)%agg, 0.0)                         ! s-1 (moles N kg)-1
-    call g_tracer_add_param('agg_lgz',zoo(5)%agg, 0.05*1e6/sperd)               ! s-1 (moles N kg)-1
+    call g_tracer_add_param('agg_smt',zoo(4)%agg, 0.0)                         ! s-1 (moles N kg)-1
+    call g_tracer_add_param('agg_lgt',zoo(5)%agg, 0.05*1e6/sperd)               ! s-1 (moles N kg)-1
     !
     !----------------------------------------------------------------------
     ! Partitioning of zooplankton ingestion to other compartments
     !----------------------------------------------------------------------
     !
-    call g_tracer_add_param('phi_det_smz',zoo(1)%phi_det, 0.3)               ! dimensionless
-    call g_tracer_add_param('phi_det_mdz',zoo(2)%phi_det, 0.7)               ! dimensionless
+    call g_tracer_add_param('phi_det_smz',zoo(1)%phi_det, 0.0)               ! dimensionless
+    call g_tracer_add_param('phi_det_mdz',zoo(2)%phi_det, 0.5)               ! dimensionless
     call g_tracer_add_param('phi_det_lgz',zoo(3)%phi_det, 1.0)               ! dimensionless
     call g_tracer_add_param('phi_det_smt',zoo(4)%phi_det, 0.85)               ! dimensionless
     call g_tracer_add_param('phi_det_lgt',zoo(5)%phi_det, 1.0)               ! dimensionless
 
-    call g_tracer_add_param('phi_ldon_smz',zoo(1)%phi_ldon, 0.7*0.7)         ! dimensionless
-    call g_tracer_add_param('phi_ldon_mdz',zoo(2)%phi_ldon, 0.7*0.3)         ! dimensionless
+    call g_tracer_add_param('phi_ldon_smz',zoo(1)%phi_ldon, 0.7*1.0)         ! dimensionless
+    call g_tracer_add_param('phi_ldon_mdz',zoo(2)%phi_ldon, 0.7*0.5)         ! dimensionless
     call g_tracer_add_param('phi_ldon_lgz',zoo(3)%phi_ldon, 0.7*0.0)         ! dimensionless
     call g_tracer_add_param('phi_ldon_smt',zoo(4)%phi_ldon, 0.7*0.15)         ! dimensionless
     call g_tracer_add_param('phi_ldon_lgt',zoo(5)%phi_ldon, 0.7*0.0)         ! dimensionless
 
-    call g_tracer_add_param('phi_ldop_smz',zoo(1)%phi_ldop, 0.65*0.7)        ! dimensionless
-    call g_tracer_add_param('phi_ldop_mdz',zoo(2)%phi_ldop, 0.65*0.3)        ! dimensionless
+    call g_tracer_add_param('phi_ldop_smz',zoo(1)%phi_ldop, 0.65*1.0)        ! dimensionless
+    call g_tracer_add_param('phi_ldop_mdz',zoo(2)%phi_ldop, 0.65*0.5)        ! dimensionless
     call g_tracer_add_param('phi_ldop_lgz',zoo(3)%phi_ldop, 0.65*0.0)        ! dimensionless
     call g_tracer_add_param('phi_ldop_smt',zoo(4)%phi_ldop, 0.65*0.15)        ! dimensionless
     call g_tracer_add_param('phi_ldop_lgt',zoo(5)%phi_ldop, 0.65*0.0)        ! dimensionless
 
-    call g_tracer_add_param('phi_srdon_smz',zoo(1)%phi_srdon, 0.1*0.7)       ! dimensionless
-    call g_tracer_add_param('phi_srdon_mdz',zoo(2)%phi_srdon, 0.1*0.3)       ! dimensionless
+    call g_tracer_add_param('phi_srdon_smz',zoo(1)%phi_srdon, 0.1*1.0)       ! dimensionless
+    call g_tracer_add_param('phi_srdon_mdz',zoo(2)%phi_srdon, 0.1*0.5)       ! dimensionless
     call g_tracer_add_param('phi_srdon_lgz',zoo(3)%phi_srdon, 0.1*0.0)       ! dimensionless
     call g_tracer_add_param('phi_srdon_smt',zoo(4)%phi_srdon, 0.1*0.15)       ! dimensionless
     call g_tracer_add_param('phi_srdon_lgt',zoo(5)%phi_srdon, 0.1*0.0)       ! dimensionless
 
-    call g_tracer_add_param('phi_srdop_smz',zoo(1)%phi_srdop, 0.15*0.7)      ! dimensionless
-    call g_tracer_add_param('phi_srdop_mdz',zoo(2)%phi_srdop, 0.15*0.3)      ! dimensionless
+    call g_tracer_add_param('phi_srdop_smz',zoo(1)%phi_srdop, 0.15*1.0)      ! dimensionless
+    call g_tracer_add_param('phi_srdop_mdz',zoo(2)%phi_srdop, 0.15*0.5)      ! dimensionless
     call g_tracer_add_param('phi_srdop_lgz',zoo(3)%phi_srdop, 0.15*0.0)      ! dimensionless
     call g_tracer_add_param('phi_srdop_smt',zoo(4)%phi_srdop, 0.15*0.15)      ! dimensionless
     call g_tracer_add_param('phi_srdop_lgt',zoo(5)%phi_srdop, 0.15*0.0)      ! dimensionless
 
-    call g_tracer_add_param('phi_sldon_smz',zoo(1)%phi_sldon, 0.2*0.7)       ! dimensionless
-    call g_tracer_add_param('phi_sldon_mdz',zoo(2)%phi_sldon, 0.2*0.3)       ! dimensionless
+    call g_tracer_add_param('phi_sldon_smz',zoo(1)%phi_sldon, 0.2*1.0)       ! dimensionless
+    call g_tracer_add_param('phi_sldon_mdz',zoo(2)%phi_sldon, 0.2*0.5)       ! dimensionless
     call g_tracer_add_param('phi_sldon_lgz',zoo(3)%phi_sldon, 0.2*0.0)       ! dimensionless
     call g_tracer_add_param('phi_sldon_smt',zoo(4)%phi_sldon, 0.2*0.15)       ! dimensionless
     call g_tracer_add_param('phi_sldon_lgt',zoo(5)%phi_sldon, 0.2*0.0)       ! dimensionless
 
-    call g_tracer_add_param('phi_sldop_smz',zoo(1)%phi_sldop, 0.2*0.7)       ! dimensionless
-    call g_tracer_add_param('phi_sldop_mdz',zoo(2)%phi_sldop, 0.2*0.3)       ! dimensionless
+    call g_tracer_add_param('phi_sldop_smz',zoo(1)%phi_sldop, 0.2*1.0)       ! dimensionless
+    call g_tracer_add_param('phi_sldop_mdz',zoo(2)%phi_sldop, 0.2*0.5)       ! dimensionless
     call g_tracer_add_param('phi_sldop_lgz',zoo(3)%phi_sldop, 0.2*0.0)       ! dimensionless
     call g_tracer_add_param('phi_sldop_smt',zoo(4)%phi_sldop, 0.2*0.15)       ! dimensionless
     call g_tracer_add_param('phi_sldop_lgt',zoo(5)%phi_sldop, 0.2*0.0)       ! dimensionless
