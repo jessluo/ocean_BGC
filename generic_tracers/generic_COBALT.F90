@@ -2077,8 +2077,6 @@ write (stdlogunit, generic_COBALT_nml)
      !
      ! vardesc_temp = vardesc("jaggloss_n_Smz","Small zooplankton nitrogen loss from aggregation layer integral",&
      !                        'h','L','s','mol N m-2 s-1','f')
-     ! zoo(1)%id_jaggloss_n = register_diag_field(package_name, vardesc_temp%name, axes(1:3),&
-     !      init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
      !
      ! vardesc_temp = vardesc("jaggloss_n_Mdz","Medium-sized zooplankton nitrogen loss from aggregation layer integral",&
      !                        'h','L','s','mol N m-2 s-1','f')
@@ -5921,7 +5919,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('kae_mdz',zoo(2)%kae, 1.0e+10)                     ! moles N kg-1
     call g_tracer_add_param('kae_lgz',zoo(3)%kae, 1.0e+10)                     ! moles N kg-1
     call g_tracer_add_param('kae_smz',zoo(4)%kae, 3.25e-6)                     ! moles N kg-1
-    call g_tracer_add_param('kae_lgz',zoo(5)%kae, 1.5e-6)                      ! moles N kg-1
+    call g_tracer_add_param('kae_lgz',zoo(5)%kae, 3.25e-6)                      ! moles N kg-1
 
     call g_tracer_add_param('agg_smz',zoo(1)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_mdz',zoo(2)%agg, 0.0)                         ! s-1 (moles N kg)-1
