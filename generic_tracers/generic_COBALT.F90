@@ -7966,6 +7966,7 @@ write (stdlogunit, generic_COBALT_nml)
        !
        sw_fac_denom = (hp_ipa_vec(6)*prey_vec(6))**cobalt%nswitch_hp + &
                       (hp_ipa_vec(7)*prey_vec(7))**cobalt%nswitch_hp + &
+                      (hp_ipa_vec(8)*prey_vec(8))**cobalt%nswitch_hp + &
                       (hp_ipa_vec(9)*prey_vec(9))**cobalt%nswitch_hp
        hp_pa_vec(6) = hp_ipa_vec(6)* &
                       ( (hp_ipa_vec(6)*prey_vec(6))**cobalt%nswitch_hp / &
@@ -7973,25 +7974,32 @@ write (stdlogunit, generic_COBALT_nml)
        hp_pa_vec(7) = hp_ipa_vec(7)* &
                       ( (hp_ipa_vec(7)*prey_vec(7))**cobalt%nswitch_hp / &
                         (sw_fac_denom+epsln) )**(1.0/cobalt%mswitch_hp)
+       hp_pa_vec(8) = hp_ipa_vec(8)* &
+                      ( (hp_ipa_vec(8)*prey_vec(8))**cobalt%nswitch_hp / &
+                        (sw_fac_denom+epsln) )**(1.0/cobalt%mswitch_hp)
        hp_pa_vec(9) = hp_ipa_vec(9)* &
                       ( (hp_ipa_vec(9)*prey_vec(9))**cobalt%nswitch_hp / &
                         (sw_fac_denom+epsln) )**(1.0/cobalt%mswitch_hp)
        tot_prey_hp = hp_pa_vec(6)*prey_vec(6) + hp_pa_vec(7)*prey_vec(7) + &
-                     hp_pa_vec(9)*prey_vec(9)
+                     hp_pa_vec(8)*prey_vec(8) + hp_pa_vec(9)*prey_vec(9)
        hp_ingest_vec(6) = cobalt%hp_temp_lim(i,j,k)*cobalt%hp_o2lim(i,j,k)*cobalt%imax_hp* &
                           hp_pa_vec(6)*prey_vec(6)*tot_prey_hp**(cobalt%coef_hp-1.0)/ &
                             (cobalt%ki_hp+tot_prey_hp)
        hp_ingest_vec(7) = cobalt%hp_temp_lim(i,j,k)*cobalt%hp_o2lim(i,j,k)*cobalt%imax_hp* &
                           hp_pa_vec(7)*prey_vec(7)*tot_prey_hp**(cobalt%coef_hp-1.0)/ &
                             (cobalt%ki_hp+tot_prey_hp)
+       hp_ingest_vec(8) = cobalt%hp_temp_lim(i,j,k)*cobalt%hp_o2lim(i,j,k)*cobalt%imax_hp* &
+                          hp_pa_vec(8)*prey_vec(8)*tot_prey_hp**(cobalt%coef_hp-1.0)/ &
+                            (cobalt%ki_hp+tot_prey_hp)
        hp_ingest_vec(9) = cobalt%hp_temp_lim(i,j,k)*cobalt%hp_o2lim(i,j,k)*cobalt%imax_hp* &
                           hp_pa_vec(9)*prey_vec(9)*tot_prey_hp**(cobalt%coef_hp-1.0)/ &
                             (cobalt%ki_hp+tot_prey_hp)
        cobalt%hp_jingest_n(i,j,k) = hp_ingest_vec(6) + hp_ingest_vec(7) + &
-                                    hp_ingest_vec(9)
+                                    hp_ingest_vec(8) + hp_ingest_vec(9)
        cobalt%hp_jingest_p(i,j,k) = hp_ingest_vec(6)*prey_p2n_vec(6) + &
                                     hp_ingest_vec(7)*prey_p2n_vec(7) + &
-                                    hp_ingest_vec(9)*prey_p2n_vec(9)
+                                    hp_ingest_vec(8)*prey_p2n_vec(8) + &
+                                    hp_ingest_vec(9)*prey_p2n_vec(9) 
        !
        ! Calculate losses to higher predators
        !
