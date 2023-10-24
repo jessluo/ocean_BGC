@@ -3632,15 +3632,19 @@ write (stdlogunit, generic_COBALT_nml)
 
     vardesc_temp = vardesc("jhploss_nsmt_100","Small tunicates nitrogen loss to higher preds. integral in upper 100m",'h','1','s','mol m-2 s-1','f')
     zoo(4)%id_jhploss_n_100 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
-     	  init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
     vardesc_temp = vardesc("jhploss_nlgt_100","Large tunicates nitrogen loss to higher preds. integral in upper 100m",'h','1','s','mol m-2 s-1','f')
     zoo(5)%id_jhploss_n_100 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
-    	  init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
     vardesc_temp = vardesc("jaggloss_nlgt_100","Large tunicates nitrogen loss from aggregation integral in upper 100m",'h','1','s','mol m-2 s-1','f')
     zoo(5)%id_jaggloss_n_100 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
-    	  init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+          init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
+
+    vardesc_temp = vardesc("jprod_ndet_nsmz_100","Small zooplankton nitrogen detritus prod. integral in upper 100m",'h','1','s','mol m-2 s-1','f')
+    zoo(1)%id_jprod_ndet_100 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
+         init_time, vardesc_temp%longname,vardesc_temp%units, missing_value = missing_value1)
 
     vardesc_temp = vardesc("jprod_ndet_nmdz_100","Medium zooplankton nitrogen detritus prod. integral in upper 100m",'h','1','s','mol m-2 s-1','f')
     zoo(2)%id_jprod_ndet_100 = register_diag_field(package_name, vardesc_temp%name, axes(1:2),&
@@ -5891,8 +5895,8 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('bresp_smz',zoo(1)%bresp, 0.9*0.020 / sperd)         ! s-1
     call g_tracer_add_param('bresp_mdz',zoo(2)%bresp, 0.008 / sperd)             ! s-1
     call g_tracer_add_param('bresp_lgz',zoo(3)%bresp, 0.0032 / sperd)            ! s-1
-    call g_tracer_add_param('bresp_smt',zoo(4)%bresp, 0.047 / sperd)             ! s-1
-    call g_tracer_add_param('bresp_lgt',zoo(5)%bresp, 0.75*0.011 / sperd)         ! s-1
+    call g_tracer_add_param('bresp_smt',zoo(4)%bresp, 0.055 / sperd)             ! s-1
+    call g_tracer_add_param('bresp_lgt',zoo(5)%bresp, 0.011 / sperd)         ! s-1
 
     call g_tracer_add_param('phi_aresp_smz',zoo(1)%phi_aresp, 0.3)               ! dimensionless
     call g_tracer_add_param('phi_aresp_mdz',zoo(2)%phi_aresp, 0.3)               ! dimensionless
@@ -5933,29 +5937,29 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('phi_det_smt',zoo(4)%phi_det, 1.0)               ! dimensionless
     call g_tracer_add_param('phi_det_lgt',zoo(5)%phi_det, 1.0)               ! dimensionless
 
-    call g_tracer_add_param('phi_ldon_smz',zoo(1)%phi_ldon, 0.65*(5.0/6.0))   ! dimensionless
-    call g_tracer_add_param('phi_ldon_mdz',zoo(2)%phi_ldon, 0.65*(1.0/3.0))   ! dimensionless
-    call g_tracer_add_param('phi_ldon_lgz',zoo(3)%phi_ldon, 0.65*0.0)         ! dimensionless
-    call g_tracer_add_param('phi_ldon_smt',zoo(4)%phi_ldon, 0.65*0.0)         ! dimensionless
-    call g_tracer_add_param('phi_ldon_lgt',zoo(5)%phi_ldon, 0.65*0.0)         ! dimensionless
+    call g_tracer_add_param('phi_ldon_smz',zoo(1)%phi_ldon, 0.7*(5.0/6.0))   ! dimensionless
+    call g_tracer_add_param('phi_ldon_mdz',zoo(2)%phi_ldon, 0.7*(1.0/3.0))   ! dimensionless
+    call g_tracer_add_param('phi_ldon_lgz',zoo(3)%phi_ldon, 0.7*0.0)         ! dimensionless
+    call g_tracer_add_param('phi_ldon_smt',zoo(4)%phi_ldon, 0.7*0.0)         ! dimensionless
+    call g_tracer_add_param('phi_ldon_lgt',zoo(5)%phi_ldon, 0.7*0.0)         ! dimensionless
 
-    call g_tracer_add_param('phi_ldop_smz',zoo(1)%phi_ldop, 0.60*(5.0/6.0))  ! dimensionless
-    call g_tracer_add_param('phi_ldop_mdz',zoo(2)%phi_ldop, 0.60*(1.0/3.0))  ! dimensionless
-    call g_tracer_add_param('phi_ldop_lgz',zoo(3)%phi_ldop, 0.60*0.0)        ! dimensionless
-    call g_tracer_add_param('phi_ldop_smt',zoo(4)%phi_ldop, 0.60*0.0)        ! dimensionless
-    call g_tracer_add_param('phi_ldop_lgt',zoo(5)%phi_ldop, 0.60*0.0)        ! dimensionless
+    call g_tracer_add_param('phi_ldop_smz',zoo(1)%phi_ldop, 0.65*(5.0/6.0))  ! dimensionless
+    call g_tracer_add_param('phi_ldop_mdz',zoo(2)%phi_ldop, 0.65*(1.0/3.0))  ! dimensionless
+    call g_tracer_add_param('phi_ldop_lgz',zoo(3)%phi_ldop, 0.65*0.0)        ! dimensionless
+    call g_tracer_add_param('phi_ldop_smt',zoo(4)%phi_ldop, 0.65*0.0)        ! dimensionless
+    call g_tracer_add_param('phi_ldop_lgt',zoo(5)%phi_ldop, 0.65*0.0)        ! dimensionless
 
-    call g_tracer_add_param('phi_srdon_smz',zoo(1)%phi_srdon, 0.15*(5.0/6.0)) ! dimensionless
-    call g_tracer_add_param('phi_srdon_mdz',zoo(2)%phi_srdon, 0.15*(1.0/3.0)) ! dimensionless
-    call g_tracer_add_param('phi_srdon_lgz',zoo(3)%phi_srdon, 0.15*0.0)       ! dimensionless
-    call g_tracer_add_param('phi_srdon_smt',zoo(4)%phi_srdon, 0.15*0.0)       ! dimensionless
-    call g_tracer_add_param('phi_srdon_lgt',zoo(5)%phi_srdon, 0.15*0.0)       ! dimensionless
+    call g_tracer_add_param('phi_srdon_smz',zoo(1)%phi_srdon, 0.1*(5.0/6.0)) ! dimensionless
+    call g_tracer_add_param('phi_srdon_mdz',zoo(2)%phi_srdon, 0.1*(1.0/3.0)) ! dimensionless
+    call g_tracer_add_param('phi_srdon_lgz',zoo(3)%phi_srdon, 0.1*0.0)       ! dimensionless
+    call g_tracer_add_param('phi_srdon_smt',zoo(4)%phi_srdon, 0.1*0.0)       ! dimensionless
+    call g_tracer_add_param('phi_srdon_lgt',zoo(5)%phi_srdon, 0.1*0.0)       ! dimensionless
 
-    call g_tracer_add_param('phi_srdop_smz',zoo(1)%phi_srdop, 0.2*(5.0/6.0)) ! dimensionless
-    call g_tracer_add_param('phi_srdop_mdz',zoo(2)%phi_srdop, 0.2*(1.0/3.0)) ! dimensionless
-    call g_tracer_add_param('phi_srdop_lgz',zoo(3)%phi_srdop, 0.2*0.0)      ! dimensionless
-    call g_tracer_add_param('phi_srdop_smt',zoo(4)%phi_srdop, 0.2*0.0)      ! dimensionless
-    call g_tracer_add_param('phi_srdop_lgt',zoo(5)%phi_srdop, 0.2*0.0)      ! dimensionless
+    call g_tracer_add_param('phi_srdop_smz',zoo(1)%phi_srdop, 0.15*(5.0/6.0)) ! dimensionless
+    call g_tracer_add_param('phi_srdop_mdz',zoo(2)%phi_srdop, 0.15*(1.0/3.0)) ! dimensionless
+    call g_tracer_add_param('phi_srdop_lgz',zoo(3)%phi_srdop, 0.15*0.0)      ! dimensionless
+    call g_tracer_add_param('phi_srdop_smt',zoo(4)%phi_srdop, 0.15*0.0)      ! dimensionless
+    call g_tracer_add_param('phi_srdop_lgt',zoo(5)%phi_srdop, 0.15*0.0)      ! dimensionless
 
     call g_tracer_add_param('phi_sldon_smz',zoo(1)%phi_sldon, 0.2*(5.0/6.0)) ! dimensionless
     call g_tracer_add_param('phi_sldon_mdz',zoo(2)%phi_sldon, 0.2*(1.0/3.0)) ! dimensionless
@@ -5985,11 +5989,11 @@ write (stdlogunit, generic_COBALT_nml)
     ! Partitioning of viral losses to various dissolved pools
     !----------------------------------------------------------------------
     !
-    call g_tracer_add_param('phi_ldon_vir',cobalt%lysis_phi_ldon, 0.65)    ! dimensionless
-    call g_tracer_add_param('phi_srdon_vir',cobalt%lysis_phi_srdon, 0.15)  ! dimensionless
-    call g_tracer_add_param('phi_sldon_vir',cobalt%lysis_phi_sldon, 0.20)  ! dimensionless
-    call g_tracer_add_param('phi_ldop_vir',cobalt%lysis_phi_ldop, 0.60)    ! dimensionless
-    call g_tracer_add_param('phi_srdop_vir',cobalt%lysis_phi_srdop, 0.20)  ! dimensionless
+    call g_tracer_add_param('phi_ldon_vir',cobalt%lysis_phi_ldon, 0.7)    ! dimensionless
+    call g_tracer_add_param('phi_srdon_vir',cobalt%lysis_phi_srdon, 0.1)  ! dimensionless
+    call g_tracer_add_param('phi_sldon_vir',cobalt%lysis_phi_sldon, 0.2)  ! dimensionless
+    call g_tracer_add_param('phi_ldop_vir',cobalt%lysis_phi_ldop, 0.65)    ! dimensionless
+    call g_tracer_add_param('phi_srdop_vir',cobalt%lysis_phi_srdop, 0.15)  ! dimensionless
     call g_tracer_add_param('phi_sldop_vir',cobalt%lysis_phi_sldop, 0.20)  ! dimensionless
     !
     !----------------------------------------------------------------------
