@@ -5853,7 +5853,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('mdz_ipa_mdz',zoo(2)%ipa_mdz, 0.0)          ! dimensionless
     call g_tracer_add_param('mdz_ipa_lgz',zoo(2)%ipa_lgz, 0.0)          ! dimensionless
     call g_tracer_add_param('mdz_ipa_smt',zoo(2)%ipa_smt, 1.0)          ! dimensionless
-    call g_tracer_add_param('mdz_ipa_lgt',zoo(2)%ipa_lgt, 0.5)         ! dimensionless
+    call g_tracer_add_param('mdz_ipa_lgt',zoo(2)%ipa_lgt, 0.25)         ! dimensionless
     call g_tracer_add_param('mdz_ipa_bact',zoo(2)%ipa_bact, 0.0)        ! dimensionless
     call g_tracer_add_param('mdz_ipa_det',zoo(2)%ipa_det, 0.0)          ! dimensionless
     ! innate prey availability for large predatory zooplankton/krill
