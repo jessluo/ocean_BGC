@@ -6968,6 +6968,7 @@ write (stdlogunit, generic_COBALT_nml)
     real :: tot_prey_hp, sw_fac_denom, basal_respiration, lim_nut_n_ingestion
     real :: cold_lim_func
     real :: bact_uptake_ratio, vmax_bact, growth_ratio
+    real :: lg_tunicate_frac_agg, lg_tunicate_agg_lim
     real :: fpoc_btm, log_fpoc_btm
     real :: fe_salt
     real :: sal,tt,tkb,ts,ts2,ts3,ts4,ts5
@@ -7985,7 +7986,11 @@ write (stdlogunit, generic_COBALT_nml)
        ! Calculate losses from aggregation (large tunicates)
        !
        n = 5
-       zoo(n)%jaggloss_n(i,j,k) = zoo(n)%temp_lim(i,j,k)*zoo(n)%agg*zoo(n)%f_n(i,j,k)**2.0
+       ! zoo(n)%jaggloss_n(i,j,k) = zoo(n)%temp_lim(i,j,k)*zoo(n)%agg*zoo(n)%f_n(i,j,k)**2.0
+       growth_ratio = min(zoo(n)%jingest_n(i,j,k)/(lg_tunicate_frac_agg * zoo(n)%temp_lim(i,j,k) * &
+                     zoo(n)%cold_lim(i,j,k) * zoo(n)%o2lim(i,j,k) * zoo(n)%imax),1.0)
+       lg_tunicate_agg_lim = (1.0-growth_ratio)**2
+       zoo(n)%jaggloss_n(i,j,k) = lg_tunicate_agg_lim * zoo(n)%agg * zoo(n)%f_n(i,j,k)**2
        zoo(n)%jaggloss_p(i,j,k) = zoo(n)%jaggloss_n(i,j,k)*prey_p2n_vec(NUM_PHYTO+1+n)
 
 
