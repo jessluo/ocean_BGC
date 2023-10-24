@@ -5795,12 +5795,12 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('imax_mdz',zoo(2)%imax, 0.57 / sperd)              ! s-1
     call g_tracer_add_param('imax_lgz',zoo(3)%imax, 0.23 / sperd)              ! s-1
     call g_tracer_add_param('imax_smz',zoo(4)%imax, 3.0 / sperd)               ! s-1 Berline et al. 2011
-    call g_tracer_add_param('imax_lgz',zoo(5)%imax, 1.1 / sperd)               ! s-1 Henschke et al. 2018
+    call g_tracer_add_param('imax_lgz',zoo(5)%imax, 0.2 / sperd)               ! s-1
     call g_tracer_add_param('ki_smz',zoo(1)%ki, 1.25e-6)                       ! moles N kg-1
     call g_tracer_add_param('ki_mdz',zoo(2)%ki, 1.25e-6)                       ! moles N kg-1
     call g_tracer_add_param('ki_lgz',zoo(3)%ki, 1.25e-6)                       ! moles N kg-1
-    call g_tracer_add_param('ki_smt',zoo(4)%ki, 3.0e-6)                       ! moles N kg-1
-    call g_tracer_add_param('ki_lgt',zoo(5)%ki, 2.0e-6)                        ! moles N kg-1
+    call g_tracer_add_param('ki_smt',zoo(4)%ki, 1.0e-6)                        ! moles N kg-1
+    call g_tracer_add_param('ki_lgt',zoo(5)%ki, 1.0e-6)                        ! moles N kg-1
     call g_tracer_add_param('ktemp_smz',zoo(1)%ktemp, 0.063)                   ! C-1
     call g_tracer_add_param('ktemp_mdz',zoo(2)%ktemp, 0.063)                   ! C-1
     call g_tracer_add_param('ktemp_lgz',zoo(3)%ktemp, 0.063)                   ! C-1
@@ -5864,7 +5864,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('lgz_ipa_mdz',zoo(3)%ipa_mdz, 1.0)          ! dimensionless
     call g_tracer_add_param('lgz_ipa_lgz',zoo(3)%ipa_lgz, 0.0)          ! dimensionless
     call g_tracer_add_param('lgz_ipa_smt',zoo(3)%ipa_smt, 1.0)          ! dimensionless
-    call g_tracer_add_param('lgz_ipa_lgt',zoo(3)%ipa_lgt, 0.0)          ! dimensionless
+    call g_tracer_add_param('lgz_ipa_lgt',zoo(3)%ipa_lgt, 0.25)          ! dimensionless
     call g_tracer_add_param('lgz_ipa_bact',zoo(3)%ipa_bact, 0.0)        ! dimensionless
     call g_tracer_add_param('lgz_ipa_det',zoo(3)%ipa_det, 0.0)          ! dimensionless
     ! innate prey availability for small tunicates (appendicularians)
@@ -5898,13 +5898,13 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('bresp_mdz',zoo(2)%bresp, 0.008 / sperd)             ! s-1
     call g_tracer_add_param('bresp_lgz',zoo(3)%bresp, 0.0032 / sperd)            ! s-1
     call g_tracer_add_param('bresp_smt',zoo(4)%bresp, 0.050 / sperd)             ! s-1
-    call g_tracer_add_param('bresp_lgt',zoo(5)%bresp, 0.7*0.027 / sperd)             ! s-1
+    call g_tracer_add_param('bresp_lgt',zoo(5)%bresp, 0.027 / sperd)             ! s-1
 
     call g_tracer_add_param('phi_aresp_smz',zoo(1)%phi_aresp, 0.3)               ! dimensionless
     call g_tracer_add_param('phi_aresp_mdz',zoo(2)%phi_aresp, 0.3)               ! dimensionless
     call g_tracer_add_param('phi_aresp_lgz',zoo(3)%phi_aresp, 0.3)               ! dimensionless
-    call g_tracer_add_param('phi_aresp_smt',zoo(4)%phi_aresp, 0.3)               ! dimensionless
-    call g_tracer_add_param('phi_aresp_lgt',zoo(5)%phi_aresp, 0.3)               ! dimensionless
+    call g_tracer_add_param('phi_aresp_smt',zoo(4)%phi_aresp, 0.2)               ! dimensionless
+    call g_tracer_add_param('phi_aresp_lgt',zoo(5)%phi_aresp, 0.2)               ! dimensionless
 
     call g_tracer_add_param('assim_eff_max_smz',zoo(1)%assim_eff_max, 0.7)       ! dimensionless
     call g_tracer_add_param('assim_eff_max_mdz',zoo(2)%assim_eff_max, 0.7)       ! dimensionless
