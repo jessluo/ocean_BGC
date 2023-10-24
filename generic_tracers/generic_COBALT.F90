@@ -5794,7 +5794,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('imax_smz',zoo(1)%imax, 1.42 / sperd)              ! s-1
     call g_tracer_add_param('imax_mdz',zoo(2)%imax, 0.57 / sperd)              ! s-1
     call g_tracer_add_param('imax_lgz',zoo(3)%imax, 0.23 / sperd)              ! s-1
-    call g_tracer_add_param('imax_smt',zoo(4)%imax, 3.25 / sperd)              ! s-1 ! note that imax and ki !
+    call g_tracer_add_param('imax_smt',zoo(4)%imax, 2.5 / sperd)              ! s-1 ! note that imax and ki !
     call g_tracer_add_param('imax_lgt',zoo(5)%imax, 0.8 / sperd)               ! s-1 ! are scaled together   !
     call g_tracer_add_param('ki_smz',zoo(1)%ki, 1.25e-6)                       ! moles N kg-1
     call g_tracer_add_param('ki_mdz',zoo(2)%ki, 1.25e-6)                       ! moles N kg-1
