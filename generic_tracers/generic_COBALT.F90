@@ -6168,7 +6168,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('frac_fast_det_mdz',zoo(2)%frac_fast_det, 0.0) ! dimensionless
     call g_tracer_add_param('frac_fast_det_lgz',zoo(3)%frac_fast_det, 0.0) ! dimensionless
     call g_tracer_add_param('frac_fast_det_smt',zoo(4)%frac_fast_det, 0.0) ! dimensionless
-    call g_tracer_add_param('frac_fast_det_lgt',zoo(5)%frac_fast_det, 0.0) ! dimensionless
+    call g_tracer_add_param('frac_fast_det_lgt',zoo(5)%frac_fast_det, 0.75) ! dimensionless
     !
     !----------------------------------------------------------------------
     ! Partitioning of viral losses to various dissolved pools
@@ -8399,10 +8399,8 @@ write (stdlogunit, generic_COBALT_nml)
          ! Add production of Fast sinking detritus from zooplankton (large tunicates) aggregation (salp-falls)
          !
          n = 5
-         !zoo(n)%jprod_ndet_fast(i,j,k) = zoo(n)%jprod_ndet_fast(i,j,k) + zoo(n)%jaggloss_n(i,j,k)
-         !zoo(n)%jprod_pdet_fast(i,j,k) = zoo(n)%jprod_pdet_fast(i,j,k) + zoo(n)%jaggloss_p(i,j,k)
-         zoo(n)%jprod_ndet(i,j,k) = zoo(n)%jprod_ndet(i,j,k) + zoo(n)%jaggloss_n(i,j,k)
-         zoo(n)%jprod_pdet(i,j,k) = zoo(n)%jprod_pdet(i,j,k) + zoo(n)%jaggloss_p(i,j,k)
+         zoo(n)%jprod_ndet_fast(i,j,k) = zoo(n)%jprod_ndet_fast(i,j,k) + zoo(n)%jaggloss_n(i,j,k)
+         zoo(n)%jprod_pdet_fast(i,j,k) = zoo(n)%jprod_pdet_fast(i,j,k) + zoo(n)%jaggloss_p(i,j,k)
 
 
          do m = 1, NUM_ZOO
