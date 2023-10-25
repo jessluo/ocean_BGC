@@ -5925,7 +5925,7 @@ write (stdlogunit, generic_COBALT_nml)
     call g_tracer_add_param('agg_mdz',zoo(2)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_lgz',zoo(3)%agg, 0.0)                         ! s-1 (moles N kg)-1
     call g_tracer_add_param('agg_smt',zoo(4)%agg, 0.0)                         ! s-1 (moles N kg)-1
-    call g_tracer_add_param('agg_lgt',zoo(5)%agg, 0.0)               ! s-1 (moles N kg)-1
+    call g_tracer_add_param('agg_lgt',zoo(5)%agg, 0.082*1e6/sperd)               ! s-1 (moles N kg)-1
     !
     !----------------------------------------------------------------------
     ! Partitioning of zooplankton ingestion to other compartments
