@@ -1,15 +1,15 @@
 !----------------------------------------------------------------
-! <CONTACT EMAIL="Niki.Zadeh@noaa.gov"> Niki Zadeh 
+! <CONTACT EMAIL="Niki.Zadeh@noaa.gov"> Niki Zadeh
 ! </CONTACT>
-! 
+!
 ! <REVIEWER EMAIL="William.Cooke@noaa.gov"> William Cooke
 ! </REVIEWER>
 !
 ! <OVERVIEW>
-! g_tracer_utils module consists of core utility subroutines 
+! g_tracer_utils module consists of core utility subroutines
 ! to be used by all generic tracer modules.
-! These include the lowest level functions for adding, 
-! allocating memory, and record keeping of individual 
+! These include the lowest level functions for adding,
+! allocating memory, and record keeping of individual
 ! generic tracers irrespective of their physical/chemical nature.
 ! </OVERVIEW>
 !----------------------------------------------------------------
@@ -26,14 +26,14 @@ module g_tracer_utils
   use mpp_mod,           only: mpp_pe, mpp_root_pe, mpp_sync
   use time_manager_mod, only : time_type
 
-  use field_manager_mod, only: fm_string_len, fm_path_name_len, fm_new_list, fm_change_list, fm_get_value
+  use field_manager_mod, only: fm_string_len, fm_new_list, fm_change_list, fm_get_value
   use field_manager_mod, only: fm_dump_list, fm_loop_over_list
 
   use fms_mod,           only: stdout
 
 #ifdef _USE_MOM6_DIAG
     use MOM_diag_mediator, only : register_diag_field_MOM=>register_diag_field
-    use MOM_diag_mediator, only : post_data_MOM=>post_data, post_data_1d_k
+    use MOM_diag_mediator, only : post_data_MOM=>post_data
     use MOM_diag_mediator, only : g_diag_ctrl=>diag_ctrl
 #else
     use diag_manager_mod, only : register_diag_field_FMS=>register_diag_field
@@ -48,7 +48,6 @@ module g_tracer_utils
 !-----------------------------------------------------------------------
 
   character(len=48), parameter :: mod_name = 'g_tracer_utils'
-
   ! <DESCRIPTION>
   ! Public types:
   !
@@ -58,14 +57,14 @@ module g_tracer_utils
   ! <PRE>
   !type g_tracer_type
   !   !A pointer to the next node in the list for the current "linked-list implementation".
-  !   type(g_tracer_type), pointer :: next => NULL()  
-  !         
-  !   !A unique index (for the possible future "array implementation")
-  !   integer :: index              
+  !   type(g_tracer_type), pointer :: next => NULL()
   !
-  !   ! Tracer name, descriptive name, package that instantiates it 
+  !   !A unique index (for the possible future "array implementation")
+  !   integer :: index
+  !
+  !   ! Tracer name, descriptive name, package that instantiates it
   !   character(len=64) :: name, longname, package_name
-  ! 
+  !
   !   ! Units of measurement for its field and its flux
   !   character(len=64) :: units, flux_units
   !
@@ -75,45 +74,45 @@ module g_tracer_utils
   !
   !   ! Surface flux, surface gas flux, deltap and kw
   !   real, _ALLOCATABLE, dimension(:,:)    :: stf    _NULL
-  ! 
+  !
   !   real, _ALLOCATABLE, dimension(:,:)    :: deltap    _NULL
-  ! 
+  !
   !   real, _ALLOCATABLE, dimension(:,:)    :: kw    _NULL
-  ! 
+  !
   !   ! Bottom  flux
   !   real, _ALLOCATABLE, dimension(:,:)    :: btf    _NULL
-  ! 
+  !
   !   ! Bottom  reservoir flux
-  !   real, _ALLOCATABLE, dimension(:,:)    :: btm_reservoir    _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: btm_reservoir    _NULL
   !
   !   ! Tracer concentration in river runoff
-  !   real, _ALLOCATABLE, dimension(:,:)    :: trunoff _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: trunoff _NULL
   !
   !   ! Runoff flux of tracer
-  !   real, _ALLOCATABLE, dimension(:,:)    :: runoff_tracer_flux _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: runoff_tracer_flux _NULL
   !
   !   ! Wet deposition flux of tracer
-  !   real, _ALLOCATABLE, dimension(:,:)    :: wetdep _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: wetdep _NULL
   !
   !   ! Dry deposition flux of tracer
-  !   real, _ALLOCATABLE, dimension(:,:)    :: drydep _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: drydep _NULL
   !
-  !   ! Tracer saturation, alpha, and schmidt number 
-  !   real, _ALLOCATABLE, dimension(:,:)    :: csurf  _NULL 
+  !   ! Tracer saturation, alpha, and schmidt number
+  !   real, _ALLOCATABLE, dimension(:,:)    :: csurf  _NULL
   !
-  !   real, _ALLOCATABLE, dimension(:,:)    :: alpha  _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: alpha  _NULL
   !
-  !   real, _ALLOCATABLE, dimension(:,:)    :: sc_no  _NULL 
+  !   real, _ALLOCATABLE, dimension(:,:)    :: sc_no  _NULL
   !
-  !   ! An 3D field for vertical movement, esp. for zooplankton, ... 
+  !   ! An 3D field for vertical movement, esp. for zooplankton, ...
   !   real, _ALLOCATABLE, dimension(:,:,:)  :: vmove  _NULL
-  !   ! An 3D field for random vertical movement, esp. for zooplankton, ... 
+  !   ! An 3D field for random vertical movement, esp. for zooplankton, ...
   !   real, _ALLOCATABLE, dimension(:,:,:)  :: vdiff  _NULL
 
   !   ! An 3D field for implicit vertical diffusion
   !   real, _ALLOCATABLE, dimension(:,:,:)  :: vdiffuse_impl  _NULL
 
-  !   ! An auxiliary 3D field for keeping model dependent change tendencies, ... 
+  !   ! An auxiliary 3D field for keeping model dependent change tendencies, ...
   !   real, _ALLOCATABLE, dimension(:,:,:)  :: tendency  _NULL
   !
   !   ! IDs for using diag_manager tools
@@ -137,7 +136,7 @@ module g_tracer_utils
   !   logical :: flux_bottom = .false. !Is there a flux through bottom?
   !
   !   ! Flux identifiers to be set by aof_set_coupler_flux()
-  !   integer :: flux_gas_ind    = -1  
+  !   integer :: flux_gas_ind    = -1
   !   integer :: flux_runoff_ind = -1
   !   integer :: flux_wetdep_ind = -1
   !   integer :: flux_drydep_ind = -1
@@ -145,34 +144,34 @@ module g_tracer_utils
   !end type g_tracer_type
   !
   ! </PRE>
-  ! 
+  !
   !
   ! </DESCRIPTION>
 
   type g_tracer_type
      !A pointer to the next node in the list for the current "linked-list implementation".
-     type(g_tracer_type), pointer :: next => NULL()  
+     type(g_tracer_type), pointer :: next => NULL()
 
      !A unique index (for the possible future "array implementation")
-     integer :: index              
+     integer :: index
 
-     ! Tracer name, descriptive name, package that instantiates it 
+     ! Tracer name, descriptive name, package that instantiates it
      character(len=fm_string_len) :: name, longname, alias, package_name
 
-     
+
      character(len=fm_string_len) :: diag_name, standard_name, diag_field_units
      real :: diag_field_scaling_factor = 1.0
 
      ! Tracer molecular wt
      real :: flux_gas_molwt
 
-     ! Tracer flux names recognized by component models (OCN, LND, ICE, ATM) 
+     ! Tracer flux names recognized by component models (OCN, LND, ICE, ATM)
      character(len=fm_string_len) :: flux_gas_name, flux_gas_type, flux_runoff_name, flux_wetdep_name, flux_drydep_name,implementation
      real, _ALLOCATABLE, dimension(:) :: flux_param, flux_gas_param
 
      ! IN and OUT (restart) files
      character(len=fm_string_len) :: ice_restart_file, ocean_restart_file
-     character(len=fm_string_len) :: flux_gas_restart_file 
+     character(len=fm_string_len) :: flux_gas_restart_file
      ! Units of measurement for its field and its flux
      character(len=fm_string_len) :: units, flux_units
 
@@ -182,7 +181,7 @@ module g_tracer_utils
      !The following pointer is intended to point to prognostic tracer field in MOM. Do not allocate!
      real, pointer,      dimension(:,:,:,:):: field4d_ptr => NULL()
      !The following pointer is intended to point to diagnostic tracer field in MOM. Do not allocate!
-     real, pointer,      dimension(:,:,:)  :: field3d_ptr => NULL() 
+     real, pointer,      dimension(:,:,:)  :: field3d_ptr => NULL()
      ! Define a 3-d field pointer so as to retain the lower
      ! and upper bounds for the 3-d version of g_tracer_get_pointer
      ! for the field option
@@ -190,48 +189,54 @@ module g_tracer_utils
 
      ! Surface flux, surface flux of gas, deltap and kw
      real, _ALLOCATABLE, dimension(:,:)    :: stf    _NULL
-
      real, _ALLOCATABLE, dimension(:,:)    :: stf_gas    _NULL
-
      real, _ALLOCATABLE, dimension(:,:)    :: deltap    _NULL
-
      real, _ALLOCATABLE, dimension(:,:)    :: kw    _NULL
 
      ! Bottom  flux
      real, _ALLOCATABLE, dimension(:,:)    :: btf    _NULL
 
      ! Bottom  reservoir flux
-     real, _ALLOCATABLE, dimension(:,:)    :: btm_reservoir    _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: btm_reservoir    _NULL
 
      ! Tracer concentration in river runoff
-     real, _ALLOCATABLE, dimension(:,:)    :: trunoff _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: trunoff _NULL
 
      ! Runoff flux of tracer
-     real, _ALLOCATABLE, dimension(:,:)    :: runoff_tracer_flux _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: runoff_tracer_flux _NULL
 
      ! Wet deposition flux of tracer
-     real, _ALLOCATABLE, dimension(:,:)    :: wetdep _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: wetdep _NULL
 
      ! Dry deposition flux of tracer
-     real, _ALLOCATABLE, dimension(:,:)    :: drydep _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: drydep _NULL
 
-     ! Tracer saturation, alpha and schmidt number 
-     real, _ALLOCATABLE, dimension(:,:)    :: csurf  _NULL 
+     ! Tracer saturation, alpha and schmidt number
+     real, _ALLOCATABLE, dimension(:,:)    :: csurf  _NULL
 
-     real, _ALLOCATABLE, dimension(:,:)    :: alpha  _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: alpha  _NULL
 
-     real, _ALLOCATABLE, dimension(:,:)    :: sc_no  _NULL 
+     real, _ALLOCATABLE, dimension(:,:)    :: sc_no  _NULL
 
-     ! An 3D field for vertical movement, esp. for zooplankton, ... 
+     ! An 3D field for vertical movement, esp. for zooplankton, ...
      real, _ALLOCATABLE, dimension(:,:,:)  :: vmove  _NULL
 
-     ! An 3D field for random vertical movement, esp. for zooplankton, ... 
+     ! An 3D field for random vertical movement, esp. for zooplankton, ...
      real, _ALLOCATABLE, dimension(:,:,:)  :: vdiff  _NULL
+
+     ! The following arrays are for tracer budget diagnostics
+     ! originally developed by Enhui Lao, Fan Yang, and Mathieu Poupon.
 
      ! An 3D field for implicit vertical diffusion
      real, _ALLOCATABLE, dimension(:,:,:)  :: vdiffuse_impl  _NULL
 
-     ! An auxiliary 3D field for keeping model dependent change tendencies, ... 
+     ! An 3D field for implicit vertical diffusion, concentration
+     real, _ALLOCATABLE, dimension(:,:,:)  :: vdiffusec_impl  _NULL
+
+     ! An 3D field for diagnosing forcing from the boundary
+     real, _ALLOCATABLE, dimension(:,:,:)  :: boundary_forcing_tend  _NULL
+
+     ! An auxiliary 3D field for keeping model dependent change tendencies, ...
      real, pointer, dimension(:,:,:)  :: tendency  => NULL()
 
      ! IDs for using diag_manager tools
@@ -239,8 +244,8 @@ module g_tracer_utils
      integer :: diag_id_stf_gas_aux=-1
      integer :: diag_id_alpha=-1, diag_id_csurf=-1, diag_id_sc_no=-1, diag_id_aux=-1
      integer :: diag_id_btf=-1,diag_id_btm=-1, diag_id_vmove=-1, diag_id_vdiff=-1
-     integer :: diag_id_vdiffuse_impl = -1, diag_id_tendency = -1, diag_id_field_taup1 = -1
-
+     integer :: diag_id_vdiffuse_impl = -1
+     integer :: diag_id_vdiffusec_impl = -1, diag_id_boundary_forcing_tend = -1
      ! Tracer Initial concentration if constant everywhere
      real    :: const_init_value = 0.0
      real    :: initial_value = 0.0
@@ -257,21 +262,26 @@ module g_tracer_utils
      logical :: flux_drydep = .false. !Is there a dry deposition?
      logical :: flux_bottom = .false. !Is there a flux through bottom?
      logical :: has_btm_reservoir = .false. !Is there a flux bottom reservoir?
+     logical :: runoff_added_to_stf = .false. ! Has flux in from runoff been added to stf?
 
      ! Flux identifiers to be set by aof_set_coupler_flux()
-     integer :: flux_gas_ind    = -1  
+     integer :: flux_gas_ind    = -1
      integer :: flux_runoff_ind = -1
      integer :: flux_wetdep_ind = -1
      integer :: flux_drydep_ind = -1
 
      logical :: requires_restart = .true.
-     ! Tracer source: filename, type, var name, units, record, gridfile  
+     ! Tracer source: filename, type, var name, units, record, gridfile
      character(len=fm_string_len) :: src_file, src_var_name, src_var_unit, src_var_gridspec
+     character(len=fm_string_len) :: obc_src_file_name,obc_src_field_name
+     real    :: obc_lfac_in = 1.
+     real    :: obc_lfac_out= 1.
+     logical :: obc_has = .true.
      integer :: src_var_record
      logical :: requires_src_info = .false.
      real    :: src_var_unit_conversion = 1.0 !This factor depends on the tracer. Ask  Jasmin
      real    :: src_var_valid_min = 0.0
-     real    :: src_var_valid_max  
+     real    :: src_var_valid_max
 
   end type g_tracer_type
 
@@ -279,15 +289,15 @@ module g_tracer_utils
   type g_diag_type
      !A pointer to the next node in the list for the current "linked-list implementation".
      type(g_diag_type), pointer :: next => NULL()
-  
+
      integer :: diag_id = -1
      character(len=fm_string_len) :: name, longname, package_name, units
-     !Diagnostic axes 
+     !Diagnostic axes
      integer :: axes(3)
      type(time_type) :: init_time
      real :: missing_value = -1.0e+10
      integer :: Z_diag = 0
-     real, pointer, dimension(:,:,:) :: field_ptr 
+     real, pointer, dimension(:,:,:) :: field_ptr
   end type g_diag_type
 
 #ifndef _USE_MOM6_DIAG
@@ -307,10 +317,10 @@ module g_tracer_utils
      !Domain extents
      integer :: isc,iec,jsc,jec,isd,ied,jsd,jed,nk
 
-     !Number of time levels 
+     !Number of time levels
      integer :: ntau
 
-     !Diagnostic axes 
+     !Diagnostic axes
      integer :: axes(3)
 
      !Initial time used for diagnostics (all tracers are instantiated at the same time).
@@ -331,7 +341,7 @@ module g_tracer_utils
 
   !Keep the state of this common type for ALL tracers
   type(g_tracer_common), target, save :: g_tracer_com
-  
+
 
   ! <DESCRIPTION>
   ! Public interfaces:
@@ -354,14 +364,13 @@ module g_tracer_utils
   public :: g_tracer_coupler_set
   public :: g_tracer_coupler_get
   public :: g_tracer_send_diag
-  public :: g_tracer_diag
   public :: g_tracer_get_name
   public :: g_tracer_get_alias
   public :: g_tracer_get_next
   public :: g_tracer_register_diag
   public :: g_tracer_is_prog
+  public :: g_tracer_vertfill
   public :: g_tracer_vertdiff_G
-  public :: g_tracer_vertdiff_M
   public :: g_tracer_start_param_list
   public :: g_tracer_end_param_list
   public :: g_diag_type
@@ -372,7 +381,9 @@ module g_tracer_utils
   public :: g_tracer_get_src_info
   public :: g_register_diag_field
   public :: g_send_data
+  public :: g_tracer_get_obc_segment_props
   public :: fm_string_len
+  public :: is_root_pe
   ! <INTERFACE NAME="g_tracer_add_param">
   !  <OVERVIEW>
   !   Add a new parameter for the generic tracer package
@@ -381,20 +392,20 @@ module g_tracer_utils
   !   This subroutine is used to add a new parameter by the calling tracer package.
   !   It provides a mechanism for parameter overwrite through the field_table.
   !For each tracer package there is a field called namelists and there
-  !the parameters can be modified from their value set by this method. 
+  !the parameters can be modified from their value set by this method.
   !E.g., we may have the following in the field_table
   !
   !   "namelists","ocean_mod","generic_topaz"
   !   init = t
   !    /
-  !This will overwrite the parameter topaz%init to be .true. at the run time 
-  !even though generic_topaz package had in the code 
+  !This will overwrite the parameter topaz%init to be .true. at the run time
+  !even though generic_topaz package had in the code
   !<TT>call g_tracer_add_param('init', topaz%init, .false. )</TT>
-  ! 
+  !
   !   For the parameters overwrite mechanism to work all calls
   !   for adding new parameters (refer to description for subroutine g_tracer_add_param)
   !   should happen between a <TT>call g_tracer_start_param_list(package_name)</TT>
-  !   and a <TT>call g_tracer_end_param_list(package_name)</TT> 
+  !   and a <TT>call g_tracer_end_param_list(package_name)</TT>
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_add_param(param_name, param_variable, param_value )
@@ -413,14 +424,14 @@ module g_tracer_utils
      module procedure g_tracer_add_param_real
      module procedure g_tracer_add_param_logical
      module procedure g_tracer_add_param_integer
-     module procedure g_tracer_add_param_string      
+     module procedure g_tracer_add_param_string
   end interface
 
   interface g_tracer_set_pointer
     module procedure g_tracer_set_pointer_3d
     module procedure g_tracer_set_pointer_4d
   end interface g_tracer_set_pointer
-   
+
   INTERFACE g_send_data
      MODULE PROCEDURE g_send_data_0d
      MODULE PROCEDURE g_send_data_1d
@@ -428,7 +439,7 @@ module g_tracer_utils
      MODULE PROCEDURE g_send_data_3d
   END INTERFACE
 
-  
+
 
   ! <INTERFACE NAME="g_tracer_set_values">
   !  <OVERVIEW>
@@ -459,7 +470,7 @@ module g_tracer_utils
   !   So the result of this call is tracer%field_name = array_in for the tracer called tracer_name
   !  </IN>
   !  <IN NAME="value" TYPE="real OR real(isd:,jsd:) OR real(isd:,jsd:,:) OR real(isd:,jsd:,:,:)">
-  !   Overloaded based on the dimension of argument array_in. 
+  !   Overloaded based on the dimension of argument array_in.
   !  </IN>
   !  <IN NAME="isd,jsd" TYPE="integer">
   !   Lower bound of the domain for argument array_in
@@ -520,7 +531,7 @@ contains
   !   For the parameters override mechanism to work all calls
   !   for adding new parameters (refer to description for subroutine g_tracer_add_param)
   !   should happen between a <TT>call g_tracer_start_param_list(package_name)</TT>
-  !   and a <TT>call g_tracer_end_param_list(package_name)</TT> 
+  !   and a <TT>call g_tracer_end_param_list(package_name)</TT>
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_start_param_list(package_name)
@@ -542,7 +553,7 @@ contains
     if (list_index .le. 0) then  !{
        call mpp_error(FATAL, trim(sub_name) // ' Could not make  the new list' // list_path)
     endif  !}
-    
+
     if (.not. fm_change_list(list_path)) then  !{
        call mpp_error(FATAL, trim(sub_name) // ' Could not change to the new list' // list_path)
     endif  !}
@@ -557,7 +568,7 @@ contains
   !   For the parameters override mechanism to work all calls
   !   for adding new parameters (refer to description for subroutine g_tracer_add_param)
   !   should happen between a <TT>call g_tracer_start_param_list(package_name)</TT>
-  !   and a <TT>call g_tracer_end_param_list(package_name)</TT> 
+  !   and a <TT>call g_tracer_end_param_list(package_name)</TT>
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_end_param_list(package_name)
@@ -573,12 +584,18 @@ contains
   end subroutine g_tracer_end_param_list
 
   !Overload interface g_tracer_add_param for real parameter
-  subroutine g_tracer_add_param_real(name, var,  value)
+  subroutine g_tracer_add_param_real(name, var, value, do_not_log)
     character(len=*), intent(in)  :: name
     real,             intent(in)  :: value
     real,             intent(out) :: var
+    logical,          optional, intent(in)    :: do_not_log !< If present and true, no stdout for parameter
 
     real :: x
+    integer :: stdoutunit
+    logical :: local_do_log
+    character(len=240) :: mesg, var_string
+
+    local_do_log  = .true. ; if (present(do_not_log))  local_do_log  = .false.
 
     ! Need to save "value" since if "var" and "value" are the same
     ! variable, and "name" does not exist, then "var/value" will be
@@ -589,15 +606,31 @@ contains
 
     if(.NOT. fm_get_value(name, var))  var = x
 
+    ! print var to stdout
+    if (local_do_log) then
+      if (is_root_pe()) then
+        stdoutunit=stdout()
+        write(var_string, '(e0.16)') var
+        write(mesg, '(" ",a,"= ", a)') trim(name), trim(var_string)
+        write(stdoutunit,'(a)') trim(mesg)
+      endif !is_root_pe
+    endif !local_do_log
+
   end subroutine g_tracer_add_param_real
 
   !Overload interface g_tracer_add_param for logical parameter
-  subroutine g_tracer_add_param_logical(name, var,  value)
+  subroutine g_tracer_add_param_logical(name, var, value, do_not_log)
     character(len=*), intent(in)  :: name
     logical,          intent(in)  :: value
     logical,          intent(out) :: var
+    logical,          optional, intent(in)    :: do_not_log !< If present and true, no stdout for parameter
 
     logical :: x
+    integer :: stdoutunit
+    logical :: local_do_log
+    character(len=240) :: mesg, var_string
+
+    local_do_log  = .true. ; if (present(do_not_log))  local_do_log  = .false.
 
     ! Need to save "value" since if "var" and "value" are the same
     ! variable, and "name" does not exist, then "var/value" will be
@@ -608,15 +641,36 @@ contains
 
     if(.NOT. fm_get_value(name, var))  var = x
 
+    if (var) then
+      var_string = 'True'
+    else
+      var_string = 'False'
+    endif
+
+    ! print var to stdout
+    if (local_do_log) then
+      if (is_root_pe()) then
+        stdoutunit=stdout()
+        write(mesg, '(" ",a,"= ", a)') trim(name), trim(var_string)
+        write(stdoutunit,'(a)') trim(mesg)
+      endif !is_root_pe
+    endif !local_do_log
+
   end subroutine g_tracer_add_param_logical
 
   !Overload interface g_tracer_add_param for integer parameter
-  subroutine g_tracer_add_param_integer(name, var,  value)
+  subroutine g_tracer_add_param_integer(name, var, value, do_not_log)
     character(len=*), intent(in)  :: name
     integer,          intent(in)  :: value
     integer,          intent(out) :: var
+    logical,          optional, intent(in)    :: do_not_log !< If present and true, no stdout for parameter
 
     real :: x
+    integer :: stdoutunit
+    logical :: local_do_log
+    character(len=240) :: mesg, var_string
+
+    local_do_log  = .true. ; if (present(do_not_log))  local_do_log  = .false.
 
     ! Need to save "value" since if "var" and "value" are the same
     ! variable, and "name" does not exist, then "var/value" will be
@@ -627,15 +681,31 @@ contains
 
     if(.NOT. fm_get_value(name, var))  var = x
 
+    ! print var to stdout
+    if (local_do_log) then
+      if (is_root_pe()) then
+        stdoutunit=stdout()
+        write(var_string, '(i16)') var
+        write(mesg, '(" ",a,"= ", a)') trim(name), trim(var_string)
+        write(stdoutunit,'(a)') trim(mesg)
+      endif !is_root_pe
+    endif !local_do_log
+
   end subroutine g_tracer_add_param_integer
 
   !Overload interface g_tracer_add_param for string parameter
-  subroutine g_tracer_add_param_string(name, var,  value)
+  subroutine g_tracer_add_param_string(name, var, value, do_not_log)
     character(len=*), intent(in)  :: name
     character(len=*), intent(in)  :: value
     character(len=*), intent(out) :: var
+    logical,          optional, intent(in)    :: do_not_log !< If present and true, no stdout for parameter
 
     character(len=fm_string_len) :: x
+    integer :: stdoutunit
+    logical :: local_do_log
+    character(len=240) :: mesg
+
+    local_do_log  = .true. ; if (present(do_not_log))  local_do_log  = .false.
 
     ! Need to save "value" since if "var" and "value" are the same
     ! variable, and "name" does not exist, then "var/value" will be
@@ -645,6 +715,15 @@ contains
     x = value
 
     if(.NOT. fm_get_value(name, var))  var = x
+
+    ! print var to stdout
+    if (local_do_log) then
+      if (is_root_pe()) then
+        stdoutunit=stdout()
+        write(mesg, '(" ",a,"= ", a)') trim(name), trim(var)
+        write(stdoutunit,'(a)') trim(mesg)
+      endif !is_root_pe
+    endif !local_do_log
 
   end subroutine g_tracer_add_param_string
 
@@ -744,15 +823,15 @@ contains
   !  <IN NAME="ocean_restart_file" TYPE="character(len=*)">
   !   refer to documentation for subroutine aof_set_coupler_flux().
   !  </IN>
-  !  
+  !
   ! </SUBROUTINE>
 
   subroutine g_tracer_add(node_ptr, package, name, longname, units,  prog, const_init_value,init_value,&
        flux_gas, flux_gas_name, flux_runoff, flux_wetdep, flux_drydep, flux_gas_molwt, flux_gas_param, &
        flux_param, flux_bottom, btm_reservoir, move_vertical, diff_vertical, sink_rate, flux_gas_restart_file, &
-       flux_gas_type,requires_src_info,standard_name,diag_name,diag_field_units,diag_field_scaling_factor,implementation) 
+       flux_gas_type,requires_src_info,standard_name,diag_name,diag_field_units,diag_field_scaling_factor,implementation)
 
-    type(g_tracer_type), pointer :: node_ptr 
+    type(g_tracer_type), pointer :: node_ptr
     character(len=*),   intent(in) :: package,name,longname,units
     logical,            intent(in) :: prog
     real,               intent(in), optional :: const_init_value
@@ -791,7 +870,7 @@ contains
     type(g_tracer_type), pointer :: g_tracer => NULL()
     integer, save :: index = 0
 
-    
+
     !===================================================================
     !Initialize the node
     !===================================================================
@@ -804,7 +883,7 @@ contains
     g_tracer%longname     = trim(longname)
     g_tracer%package_name = trim(package)
     g_tracer%units        = trim(units)
-    g_tracer%prog         = prog 
+    g_tracer%prog         = prog
 
     if (present(standard_name)) then
       g_tracer%standard_name = trim(standard_name)
@@ -825,20 +904,20 @@ contains
       g_tracer%diag_field_units = trim(units)
     endif
 
-    !Restart files for tracers 
+    !Restart files for tracers
     g_tracer%ocean_restart_file = trim(g_tracer_com%ocean_restart_file)
     !Restart files for ice fluxes
     g_tracer%ice_restart_file   = trim(g_tracer_com%ice_restart_file)
 
     !Restart files for csurf, alpha and sc_no for tracers with gas flux default values
-    g_tracer%flux_gas_restart_file = trim("ocean_airsea_flux.res.nc")    
+    g_tracer%flux_gas_restart_file = trim("ocean_airsea_flux.res.nc")
 
     g_tracer%alias        = trim(name)
-    !%alias is the global name for this tracer 
+    !%alias is the global name for this tracer
     !i.e., the name this tracer is known outside generic modules e.g., to model componenets.
     !Normally, %alias = %name as set above.
     !Sometimes, for debugging purposes the user may want to change the global name of a tracer
-    !e.g., to clone a tracer and rrun it under a different name. 
+    !e.g., to clone a tracer and rrun it under a different name.
     !This can be done for all tracers by:
     !g_tracer%alias        = trim("g_") // trim(name)
 
@@ -851,7 +930,7 @@ contains
     !===================================================================
     !Allocate and initialize member field arrays
     !===================================================================
-    !Note that const_init_value unlike init_value has special meaning in MOM 
+    !Note that const_init_value unlike init_value has special meaning in MOM
     ! and if present the field is not restarted from a file!!
     if(present(const_init_value)) then
        g_tracer%const_init_value = const_init_value
@@ -862,7 +941,7 @@ contains
     if(present(init_value))  g_tracer%initial_value = init_value
 
     !
-    !Determine the fluxes 
+    !Determine the fluxes
     !
 
     if (present(implementation)) then
@@ -896,7 +975,7 @@ contains
 
     if(present(flux_runoff))  g_tracer%flux_runoff = flux_runoff
     if(g_tracer%flux_runoff) then
-       g_tracer%flux_runoff_name=trim("runoff_") // trim(g_tracer%alias) 
+       g_tracer%flux_runoff_name=trim("runoff_") // trim(g_tracer%alias)
     endif
 
     if(present(flux_wetdep))  g_tracer%flux_wetdep = flux_wetdep
@@ -919,31 +998,43 @@ contains
 
     if(present(sink_rate)) g_tracer%sink_rate = sink_rate
 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_requires_src_info",g_tracer%requires_src_info , .false.)
-
-    if(present(requires_src_info)) then
-       g_tracer%requires_src_info = requires_src_info 
-    elseif(trim(g_tracer%package_name) .eq. 'generic_cobalt' .or. &
-           trim(g_tracer%package_name) .eq. 'generic_abiotic' .or. &
-           trim(g_tracer%package_name) .eq. 'generic_bling') then !Niki: later we can make this just else
-       call  g_tracer_add_param('enforce_src_info', g_tracer%requires_src_info ,  .true.) 
+    ! Set default based on global option first (enforce_src_info)
+    if (trim(g_tracer%package_name) .eq. 'generic_cobalt' .or. &
+        trim(g_tracer%package_name) .eq. 'generic_abiotic' .or. &
+        trim(g_tracer%package_name) .eq. 'generic_bling') then
+        call g_tracer_add_param('enforce_src_info', g_tracer%requires_src_info, .true.)
+    else
+        g_tracer%requires_src_info = .false.
     endif
-       
-    call  g_tracer_add_param(trim(g_tracer%name)//"_src_file",         g_tracer%src_file ,        'NULL') 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_name",     g_tracer%src_var_name ,    'NULL') 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_unit",     g_tracer%src_var_unit ,    'NULL') 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_record",   g_tracer%src_var_record ,  -1) 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_gridspec", g_tracer%src_var_gridspec ,'NULL') 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_valid_min",        g_tracer%src_var_valid_min , -99.0) 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_valid_max",        g_tracer%src_var_valid_max , +1.0e64) 
-    call  g_tracer_add_param(trim(g_tracer%name)//"_requires_restart", g_tracer%requires_restart , .true.) 
-    
+
+    ! Now allow per-tracer override (if defined in field_table or passed in)
+    call g_tracer_add_param(trim(g_tracer%name)//"_requires_src_info", g_tracer%requires_src_info, g_tracer%requires_src_info)
+
+    ! Finally allow hard-coded override if passed as optional argument
+    if (present(requires_src_info)) then
+        g_tracer%requires_src_info = requires_src_info
+    endif
+
+    call  g_tracer_add_param(trim(g_tracer%name)//"_src_file",         g_tracer%src_file ,        'NULL')
+    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_name",     g_tracer%src_var_name ,    'NULL')
+    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_unit",     g_tracer%src_var_unit ,    'NULL')
+    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_record",   g_tracer%src_var_record ,  -1)
+    call  g_tracer_add_param(trim(g_tracer%name)//"_src_var_gridspec", g_tracer%src_var_gridspec ,'NULL')
+    call  g_tracer_add_param(trim(g_tracer%name)//"_valid_min",        g_tracer%src_var_valid_min , -99.0)
+    call  g_tracer_add_param(trim(g_tracer%name)//"_valid_max",        g_tracer%src_var_valid_max , +1.0e64)
+    call  g_tracer_add_param(trim(g_tracer%name)//"_requires_restart", g_tracer%requires_restart , .true.)
+    call  g_tracer_add_param(trim(g_tracer%name)//"_obc_has",g_tracer%obc_has , .true.)
+    call  g_tracer_add_param(trim(g_tracer%name)//"_obc_src_file_name",g_tracer%obc_src_file_name ,  'obgc_obc.nc')
+    call  g_tracer_add_param(trim(g_tracer%name)//"_obc_src_field_name",g_tracer%obc_src_field_name,trim(g_tracer%name))
+    call  g_tracer_add_param(trim(g_tracer%name)//"_obc_lfac_in" ,g_tracer%obc_lfac_in , 1.0)
+    call  g_tracer_add_param(trim(g_tracer%name)//"_obc_lfac_out",g_tracer%obc_lfac_out, 1.0)
+
     !===================================================================
     !Reversed Linked List implementation! Make this new node to be the head of the list.
-    !===================================================================    
+    !===================================================================
 
-    g_tracer%next => node_ptr 
-    node_ptr => g_tracer 
+    g_tracer%next => node_ptr
+    node_ptr => g_tracer
 
 
   end subroutine g_tracer_add
@@ -972,61 +1063,66 @@ contains
     integer :: isc,iec,jsc,jec,isd,ied,jsd,jed, nk,ntau,axes(3)
 
     !Get the common values for all tracers
-    call g_tracer_get_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,axes) 
+    call g_tracer_get_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,axes)
 
     allocate(g_tracer%field(isd:ied,jsd:jed,nk,ntau));  g_tracer%field(:,:,:,:) = g_tracer%initial_value
     g_tracer%field_3d => remap_bounds(isd, jsd, 1, g_tracer%field(:,:,:,1))
 
     if(g_tracer%prog) then
-       allocate(g_tracer%tendency(isd:ied,jsd:jed,nk)); g_tracer%tendency(:,:,:) = 0.0
+       allocate(g_tracer%tendency(isd:ied,jsd:jed,nk));
+       g_tracer%tendency(:,:,:) = 0.0
        allocate(g_tracer%vdiffuse_impl(isd:ied,jsd:jed,nk))
        g_tracer%vdiffuse_impl(:,:,:) = 0.0
+       allocate(g_tracer%vdiffusec_impl(isd:ied,jsd:jed,nk))
+       g_tracer%vdiffusec_impl(:,:,:) = 0.0
+       allocate(g_tracer%boundary_forcing_tend(isd:ied,jsd:jed,nk))
+       g_tracer%boundary_forcing_tend(:,:,:) = 0.0
     endif
 
     if(g_tracer%flux_gas) then
        allocate(g_tracer%alpha(isd:ied,jsd:jed));g_tracer%alpha=0.0
        allocate(g_tracer%csurf(isd:ied,jsd:jed));g_tracer%csurf=0.0
-       allocate(g_tracer%stf_gas(isd:ied,jsd:jed)); g_tracer%stf_gas(:,:) = 0.0 
+       allocate(g_tracer%stf_gas(isd:ied,jsd:jed)); g_tracer%stf_gas(:,:) = 0.0
        if(g_tracer%flux_gas_type .eq. 'air_sea_gas_flux_generic') then
           allocate(g_tracer%sc_no(isd:ied,jsd:jed));g_tracer%sc_no=0.0
-          allocate(g_tracer%deltap(isd:ied,jsd:jed)); g_tracer%deltap(:,:) = 0.0 
-          allocate(g_tracer%kw(isd:ied,jsd:jed)); g_tracer%kw(:,:) = 0.0 
+          allocate(g_tracer%deltap(isd:ied,jsd:jed)); g_tracer%deltap(:,:) = 0.0
+          allocate(g_tracer%kw(isd:ied,jsd:jed)); g_tracer%kw(:,:) = 0.0
        endif
     endif
     if(g_tracer%flux_runoff) then
-       allocate(g_tracer%trunoff(isd:ied,jsd:jed));g_tracer%trunoff(:,:) = 0.0 
-       allocate(g_tracer%runoff_tracer_flux(isd:ied,jsd:jed));g_tracer%runoff_tracer_flux(:,:) = 0.0 
+       allocate(g_tracer%trunoff(isd:ied,jsd:jed));g_tracer%trunoff(:,:) = 0.0
+       allocate(g_tracer%runoff_tracer_flux(isd:ied,jsd:jed));g_tracer%runoff_tracer_flux(:,:) = 0.0
     endif
 
     if(g_tracer%flux_wetdep) then
-       allocate(g_tracer%wetdep(isd:ied,jsd:jed));g_tracer%wetdep(:,:) = 0.0 
+       allocate(g_tracer%wetdep(isd:ied,jsd:jed));g_tracer%wetdep(:,:) = 0.0
     endif
 
     if(g_tracer%flux_drydep) then
-       allocate(g_tracer%drydep(isd:ied,jsd:jed));g_tracer%drydep(:,:) = 0.0 
+       allocate(g_tracer%drydep(isd:ied,jsd:jed));g_tracer%drydep(:,:) = 0.0
     endif
 
     if(g_tracer%flux_bottom) then
-       allocate(g_tracer%btf(isd:ied,jsd:jed));g_tracer%btf(:,:) = 0.0 
+       allocate(g_tracer%btf(isd:ied,jsd:jed));g_tracer%btf(:,:) = 0.0
     endif
 
     if(g_tracer%has_btm_reservoir) then
-       allocate(g_tracer%btm_reservoir(isd:ied,jsd:jed));g_tracer%btm_reservoir(:,:) = 0.0 
+       allocate(g_tracer%btm_reservoir(isd:ied,jsd:jed));g_tracer%btm_reservoir(:,:) = 0.0
     endif
 
     if(g_tracer%move_vertical) then
-       allocate(g_tracer%vmove(isd:ied,jsd:jed, nk));g_tracer%vmove(:,:,:) = 0. 
+       allocate(g_tracer%vmove(isd:ied,jsd:jed, nk));g_tracer%vmove(:,:,:) = 0.
     endif
 
     if(g_tracer%diff_vertical) then
-       allocate(g_tracer%vdiff(isd:ied,jsd:jed, nk));g_tracer%vdiff(:,:,:) = 0. 
+       allocate(g_tracer%vdiff(isd:ied,jsd:jed, nk));g_tracer%vdiff(:,:,:) = 0.
     endif
     !Surface flux %stf exists if one of the following fluxes were requested:
 
     if(g_tracer%flux_gas .or. g_tracer%flux_runoff .or. g_tracer%flux_wetdep .or. g_tracer%flux_drydep) then
-       allocate(g_tracer%stf(isd:ied,jsd:jed)); g_tracer%stf(:,:) = 0.0 
+       allocate(g_tracer%stf(isd:ied,jsd:jed)); g_tracer%stf(:,:) = 0.0
     endif
-    
+
   end subroutine g_tracer_init
 
   subroutine g_tracer_flux_init(g_tracer, verbosity)
@@ -1038,7 +1134,7 @@ contains
     !Get coupler flux indices
     !===================================================================
     !
-    !For each kind of flux allocate the appropriate arrays only if that flux 
+    !For each kind of flux allocate the appropriate arrays only if that flux
     !indicated to exist for the tracer.
 
 !            implementation    = 'ocmip2',                                                     &
@@ -1084,8 +1180,8 @@ contains
             verbosity            = verbosity                                                  &
             )
     endif
-    
-    
+
+
 
   end subroutine g_tracer_flux_init
 
@@ -1096,13 +1192,13 @@ contains
   !  </OVERVIEW>
   !  <DESCRIPTION>
   !   Use diag_manager register_diag_field for each of the field arrays that were _ALLOCATED for a tracer node.
-  !   These include %field,  %tendency, %stf, %stf_gas, %deltap, %kw, %btf, %trunoff, %alpha, %csurf, %sc_no, %btm_reservoir. 
+  !   These include %field,  %tendency, %stf, %stf_gas, %deltap, %kw, %btf, %trunoff, %alpha, %csurf, %sc_no, %btm_reservoir.
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call  g_tracer_register_diag(g_tracer)
   !  </TEMPLATE>
   !  <IN NAME="g_tracer" TYPE="type(g_tracer_type), pointer">
-  !   Pointer to this tracer node. 
+  !   Pointer to this tracer node.
   !  </IN>
   ! </SUBROUTINE>
 
@@ -1130,15 +1226,6 @@ contains
          standard_name = g_tracer%standard_name)
     endif
 
-    string=trim(g_tracer%alias) // trim("_taup1")
-    g_tracer%diag_id_field_taup1 = g_register_diag_field(g_tracer%package_name, &
-         trim(string),                 &
-         g_tracer_com%axes(1:3),       &
-         g_tracer_com%init_time,       &
-         trim(g_tracer%longname) // ' at taup1',      &
-         trim(g_tracer%units),         &
-         missing_value = -1.0e+20)
-
     string=trim(g_tracer%alias) // trim("_aux")
     g_tracer%diag_id_aux = g_register_diag_field(g_tracer%package_name, &
          trim(string),                 &
@@ -1163,16 +1250,25 @@ contains
          g_tracer_com%axes(1:3),       &
          g_tracer_com%init_time,       &
          'Implicit vertical diffusion of ' // trim(g_tracer%alias),      &
-         trim('mole/m^2/s'),                  &
+         trim('mol kg-1 m s-1'),                  &
          missing_value = -1.0e+20)
 
-    string=trim(g_tracer%alias) // trim("_tendency")
-    g_tracer%diag_id_tendency = g_register_diag_field(g_tracer%package_name, &
+    string=trim(g_tracer%alias) // trim("_vdiffusec_impl")
+    g_tracer%diag_id_vdiffusec_impl = g_register_diag_field(g_tracer%package_name, &
          trim(string),                 &
          g_tracer_com%axes(1:3),       &
          g_tracer_com%init_time,       &
-         'Generic tracer tendency of ' // trim(g_tracer%alias),      &
-         trim('mole/m^2/s'),                  &
+         'Implicit vertical diffusion concentration of ' //trim(g_tracer%alias),   &
+         trim('mol kg-1 s-1'),                  &
+         missing_value = -1.0e+20)
+
+    string=trim(g_tracer%alias) // trim("_boundary_forcing_tend")
+    g_tracer%diag_id_boundary_forcing_tend = g_register_diag_field(g_tracer%package_name, &
+         trim(string),                 &
+         g_tracer_com%axes(1:3),       &
+         g_tracer_com%init_time,       &
+         'Boundary forcing tendency concentration of ' // trim(g_tracer%alias), &
+         trim('mol kg-1 s-1'),                  &
          missing_value = -1.0e+20)
 
     string=trim(g_tracer%alias) // trim("_vdiff")
@@ -1190,7 +1286,7 @@ contains
          g_tracer_com%axes(1:2),       &
          g_tracer_com%init_time,       &
          'Total flux of ' // trim(g_tracer%alias) // ' into Ocean Surface', &
-         trim('mole/m^2/sec'),         &
+         trim('mol m-2 s-1'),         &
          missing_value = -1.0e+20)
 
     string=trim(g_tracer%alias) // trim("_stf_gas")
@@ -1199,7 +1295,7 @@ contains
          g_tracer_com%axes(1:2),       &
          g_tracer_com%init_time,       &
          'Gas exchange flux of ' // trim(g_tracer%alias) // ' into Ocean Surface', &
-         trim('mole/m^2/sec'),         &
+         trim('mol m-2 s-1'),         &
          missing_value = -1.0e+20)
 
     string=trim(g_tracer%alias) // trim("_stf_gas_aux")
@@ -1208,7 +1304,7 @@ contains
          g_tracer_com%axes(1:2),       &
          g_tracer_com%init_time,       &
          'Auxilliary Gas exchange flux of ' // trim(g_tracer%alias) // ' into Ocean Surface', &
-         trim('mole/m^2/sec'),         &
+         trim('mol m-2 s-1'),         &
          missing_value = -1.0e+20)
 
     string=trim(g_tracer%alias) // trim("_deltap")
@@ -1235,7 +1331,7 @@ contains
          g_tracer_com%axes(1:2),       &
          g_tracer_com%init_time,       &
          'Total flux of ' // trim(g_tracer%alias) // trim(' into Ocean Bottom'), &
-         trim('mole/m^2/sec'),         &
+         trim('mol m-2 s-1'),         &
          missing_value = -1.0e+20)
 
     string=trim(g_tracer%alias) // trim("_btm_reservoir")
@@ -1293,7 +1389,7 @@ contains
   !   Use coupler_util subroutine set_coupler_values() to set the coupler values
   !   for fluxes to be exchanged with Ice for the requested fluxes.
   !   NOTE:
-  !   This is a collective subroutine and will traverese the list of generic tracers and 
+  !   This is a collective subroutine and will traverese the list of generic tracers and
   !   set the coupler values for each tracer node accordingly.
   !  </DESCRIPTION>
   !  <TEMPLATE>
@@ -1303,7 +1399,7 @@ contains
   !   Pointer to the head of the generic tracer list.
   !  </IN>
   !  <IN NAME="IOB_struc" TYPE="type(coupler_2d_bc_type)">
-  !   The coupler flux IOB structure. 
+  !   The coupler flux IOB structure.
   !  </IN>
   !  OPTIONAL ARGS:
   !  <IN NAME="value" TYPE="real">
@@ -1312,7 +1408,7 @@ contains
   ! </SUBROUTINE>
 
   subroutine g_tracer_coupler_set(g_tracer_list,IOB_struc,value)
-    type(g_tracer_type), pointer :: g_tracer_list,g_tracer 
+    type(g_tracer_type), pointer :: g_tracer_list,g_tracer
     type(coupler_2d_bc_type), intent(inout) :: IOB_struc
     real, optional :: value
 
@@ -1322,15 +1418,15 @@ contains
          ": No tracer in the list.")
 
     g_tracer => g_tracer_list
-    !Go through the list of tracers 
-    do  
+    !Go through the list of tracers
+    do
        !
        !Set coupler values only for tracers that have _ALLOCATED %alpha, %csurf and %sc_no
        !
 
        if(_ALLOCATED(g_tracer%alpha)) then
 
-          if(present(value)) g_tracer%alpha=value 
+          if(present(value)) g_tracer%alpha=value
 
           call set_coupler_values(g_tracer%alpha,   &
                BC_struc   = IOB_struc,              &
@@ -1344,7 +1440,7 @@ contains
 
        if(_ALLOCATED(g_tracer%csurf)) then
 
-          if(present(value)) g_tracer%csurf=value 
+          if(present(value)) g_tracer%csurf=value
 
           call set_coupler_values(g_tracer%csurf,   &
                BC_struc   = IOB_struc,              &
@@ -1358,7 +1454,7 @@ contains
 
        if(_ALLOCATED(g_tracer%sc_no)) then
 
-          if(present(value)) g_tracer%sc_no=value 
+          if(present(value)) g_tracer%sc_no=value
 
           call set_coupler_values(g_tracer%sc_no,   &
                BC_struc   = IOB_struc,              &
@@ -1385,7 +1481,7 @@ contains
   !   Use coupler_util subroutine extract_coupler_values() to get the coupler values
   !   for fluxes to be exchanged with Ice for the requested fluxes only.
   !   NOTE:
-  !   This is a collective subroutine and will traverese the list of generic tracers and 
+  !   This is a collective subroutine and will traverese the list of generic tracers and
   !   get the coupler values for each tracer node accordingly.
   !  </DESCRIPTION>
   !  <TEMPLATE>
@@ -1395,12 +1491,12 @@ contains
   !   Pointer to the head of the generic tracer list.
   !  </IN>
   !  <IN NAME="IOB_struc" TYPE="type(coupler_2d_bc_type)">
-  !   The coupler flux IOB structure. 
+  !   The coupler flux IOB structure.
   !  </IN>
   ! </SUBROUTINE>
 
   subroutine g_tracer_coupler_get(g_tracer_list,IOB_struc, weight, model_time)
-    type(g_tracer_type),          pointer :: g_tracer_list, g_tracer 
+    type(g_tracer_type),          pointer :: g_tracer_list, g_tracer
     type(coupler_2d_bc_type),    intent(in) :: IOB_struc
     type(time_type),    optional,intent(in) :: model_time
     real,               optional,intent(in) :: weight
@@ -1419,18 +1515,18 @@ contains
     allocate(kw_array(g_tracer_com%isd:g_tracer_com%ied,g_tracer_com%jsd:g_tracer_com%jed))
 
 
-    !Go through the list of tracers 
-    do  
+    !Go through the list of tracers
+    do
        stf_array=0.0
 
        if(g_tracer%flux_gas) then
           temp_array=0.0
           call extract_coupler_values(BC_struc  =IOB_struc, &
-               BC_index  =g_tracer%flux_gas_ind,    & 
+               BC_index  =g_tracer%flux_gas_ind,    &
                BC_element=ind_flux,                 &
                array_out =temp_array,               &
                conversion=-1.0,                     &
-               ilb=g_tracer_com%isd,jlb=g_tracer_com%jsd,& !lower bounds of array_out 
+               ilb=g_tracer_com%isd,jlb=g_tracer_com%jsd,& !lower bounds of array_out
                is=g_tracer_com%isc, ie=g_tracer_com%iec,&
                js=g_tracer_com%jsc, je=g_tracer_com%jec)
           !This does temp_array=conv *BC_struc%bc(flux_gas_ind)%field(ind_flux)%values
@@ -1443,20 +1539,20 @@ contains
              temp_array=0.0
              deltap_array=0.0
              call extract_coupler_values(BC_struc  =IOB_struc, &
-                  BC_index  =g_tracer%flux_gas_ind,    & 
+                  BC_index  =g_tracer%flux_gas_ind,    &
                   BC_element=ind_deltap,               &
                   array_out =temp_array,               &
                   conversion=1.0,                      &
-                  ilb=g_tracer_com%isd,jlb=g_tracer_com%jsd,& !lower bounds of array_out 
+                  ilb=g_tracer_com%isd,jlb=g_tracer_com%jsd,& !lower bounds of array_out
                   is=g_tracer_com%isc, ie=g_tracer_com%iec,&
                   js=g_tracer_com%jsc, je=g_tracer_com%jec)
              !This does temp_array=conv *BC_struc%bc(flux_gas_ind)%field(ind_flux)%values
-             
+
              deltap_array = deltap_array+temp_array
              temp_array=0.0
              kw_array=0.0
              call extract_coupler_values(BC_struc  =IOB_struc, &
-                  BC_index  =g_tracer%flux_gas_ind,    & 
+                  BC_index  =g_tracer%flux_gas_ind,    &
                   BC_element=ind_kw,                   &
                   array_out =temp_array,               &
                   conversion=1.0,                      &
@@ -1464,10 +1560,10 @@ contains
                   is=g_tracer_com%isc, ie=g_tracer_com%iec,&
                   js=g_tracer_com%jsc, je=g_tracer_com%jec)
              !This does temp_array=conv *BC_struc%bc(flux_gas_ind)%field(ind_flux)%values
-             
+
              kw_array = kw_array+temp_array
           endif
-          
+
        endif
 
        if(g_tracer%flux_drydep) then
@@ -1481,7 +1577,7 @@ contains
                is=g_tracer_com%isc, ie=g_tracer_com%iec, &
                js=g_tracer_com%jsc, je=g_tracer_com%jec)
 
-          stf_array = stf_array+temp_array !flux_drydep contributes to %stf 
+          stf_array = stf_array+temp_array !flux_drydep contributes to %stf
 
           call g_tracer_set_values(g_tracer,g_tracer%name,'drydep',temp_array,&
                g_tracer_com%isd,g_tracer_com%jsd, weight)
@@ -1521,7 +1617,7 @@ contains
 
        !Any of the following fluxes contribute to %stf
        !gas, wetdep and drydep contribute explicitly here.
-       !runoff contributes to %stf in GOLD but not in MOM, 
+       !runoff contributes to %stf in GOLD but not in MOM,
        !so it will be added later in the model-dependent driver code (GOLD_generic_tracer.F90)
 
        if(g_tracer%flux_gas .or. g_tracer%flux_drydep .or. g_tracer%flux_wetdep .or. g_tracer%flux_runoff ) then
@@ -1543,7 +1639,7 @@ contains
 !       if(present(model_time)) then
 !       if (g_tracer%diag_id_stf_gas_aux .gt. 0 .and. _ALLOCATED(g_tracer%stf_gas)) then
 !          used = send_data(g_tracer%diag_id_stf_gas_aux, g_tracer%stf_gas(:,:), model_time,&
-!               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+!               rmask = g_tracer_com%grid_tmask(:,:,1),&
 !               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
 !               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
 !       endif
@@ -1559,7 +1655,7 @@ contains
   end subroutine g_tracer_coupler_get
 
   subroutine g_tracer_coupler_accumulate(g_tracer_list,IOB_struc, weight, model_time)
-    type(g_tracer_type),          pointer    :: g_tracer_list, g_tracer 
+    type(g_tracer_type),          pointer    :: g_tracer_list, g_tracer
     type(coupler_2d_bc_type),    intent(in)  :: IOB_struc
     real,                        intent(in)  :: weight
     type(time_type), optional,   intent(in)  :: model_time
@@ -1572,7 +1668,7 @@ contains
 
   subroutine g_tracer_set_csdiag(diag_CS)
     type(g_diag_ctrl),  target,intent(in) :: diag_CS
-    g_tracer_com%diag_CS = diag_CS 
+    g_tracer_com%diag_CS = diag_CS
   end subroutine g_tracer_set_csdiag
 
   ! <SUBROUTINE NAME="g_tracer_set_common">
@@ -1587,7 +1683,7 @@ contains
   !   call g_tracer_set_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,axes,grid_tmask,grid_kmt,init_time)
   !  </TEMPLATE>
   !  <IN NAME="" TYPE="">
-  !   
+  !
   !  </IN>
   ! </SUBROUTINE>
 
@@ -1595,7 +1691,7 @@ contains
     integer,                     intent(in) :: isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,axes(3)
     real, dimension(isd:,jsd:,:),intent(in) :: grid_tmask
     integer,dimension(isd:,jsd:),intent(in) :: grid_kmt
-    type(time_type),             intent(in) :: init_time 
+    type(time_type),             intent(in) :: init_time
 
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_set_common'
     integer :: i,j
@@ -1616,10 +1712,10 @@ contains
     g_tracer_com%init_time=init_time
 
     if(.NOT. _ALLOCATED(g_tracer_com%grid_tmask)) allocate(g_tracer_com%grid_tmask(isd:ied,jsd:jed,nk))
-    g_tracer_com%grid_tmask=grid_tmask 
+    g_tracer_com%grid_tmask=grid_tmask
 
 
-    if(.NOT. _ALLOCATED(g_tracer_com%grid_kmt)) allocate(g_tracer_com%grid_kmt(isd:ied,jsd:jed))    
+    if(.NOT. _ALLOCATED(g_tracer_com%grid_kmt)) allocate(g_tracer_com%grid_kmt(isd:ied,jsd:jed))
     g_tracer_com%grid_kmt = grid_kmt
 
     if(.NOT. _ALLOCATED(g_tracer_com%grid_mask_coast)) allocate(g_tracer_com%grid_mask_coast(isd:ied,jsd:jed))
@@ -1629,14 +1725,14 @@ contains
     !so that we can decide if the coast line coinsides with a point on the compute domain boundary
 
     g_tracer_com%grid_mask_coast(:,:) = 0
-    do j =jsc, jec ; do i = isc, iec  
-       if (g_tracer_com%grid_tmask(i,j,1) .gt. 0) then 
+    do j =jsc, jec ; do i = isc, iec
+       if (g_tracer_com%grid_tmask(i,j,1) .gt. 0) then
           if (g_tracer_com%grid_tmask(i-1,j,1) .lt. 1 .or. g_tracer_com%grid_tmask(i,j-1,1) .lt. 1 .or. &
               g_tracer_com%grid_tmask(i+1,j,1) .lt. 1 .or. g_tracer_com%grid_tmask(i,j+1,1) .lt. 1) then !{
              g_tracer_com%grid_mask_coast(i,j) = 1
           endif
        endif
-    enddo; enddo     
+    enddo; enddo
 
 
   end subroutine g_tracer_set_common
@@ -1646,14 +1742,14 @@ contains
   !   Get common values and arrays for ALL generic tracers to share
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !   
+  !
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_get_common(isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau,&
   !     axes,grid_tmask,grid_mask_coast,grid_kmt,init_time)
   !  </TEMPLATE>
   !  <IN NAME="" TYPE="">
-  !   
+  !
   !  </IN>
   ! </SUBROUTINE>
 
@@ -1662,7 +1758,7 @@ contains
 
     integer,               intent(out) :: isc,iec,jsc,jec,isd,ied,jsd,jed,nk,ntau
     integer,optional,      intent(out) :: axes(3)
-    type(time_type), optional,      intent(out) :: init_time 
+    type(time_type), optional,      intent(out) :: init_time
     real, optional, dimension(:,:,:),pointer    :: grid_tmask
     integer, optional, dimension(:,:),  pointer :: grid_mask_coast
     integer, optional, dimension(:,:),  pointer :: grid_kmt
@@ -1682,7 +1778,7 @@ contains
     jec=g_tracer_com%jec
     nk =g_tracer_com%nk
     ntau=g_tracer_com%ntau
-    if(present(axes))             axes = g_tracer_com%axes 
+    if(present(axes))             axes = g_tracer_com%axes
     if(present(init_time))        init_time=g_tracer_com%init_time
     if(present(grid_tmask))       grid_tmask => g_tracer_com%grid_tmask
     if(present(grid_mask_coast))  grid_mask_coast=> g_tracer_com%grid_mask_coast
@@ -1695,7 +1791,7 @@ contains
 
   subroutine g_tracer_get_diagCS(diag_CS)
     type(g_diag_ctrl),        pointer :: diag_CS
-    
+
     diag_CS => g_tracer_com%diag_CS
   end subroutine g_tracer_get_diagCS
 
@@ -1707,7 +1803,7 @@ contains
     g_tracer_com%ocean_restart_file  = ocean_restart_file
 
   end subroutine g_tracer_set_files
-    
+
   !Overload interface g_tracer_get_pointer for 4D fields
 
   subroutine g_tracer_get_4D(g_tracer_list,name,member,array_ptr)
@@ -1729,13 +1825,13 @@ contains
 
     select case(member)
     case ('field')
-       if(associated(g_tracer%field)) then 
+       if(associated(g_tracer%field)) then
           array_ptr => g_tracer%field
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot get member variable: "//trim(name)//" % "//trim(member))
        endif
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(name)//" % "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(name)//" % "//trim(member))
     end select
 
   end subroutine g_tracer_get_4D
@@ -1760,25 +1856,30 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('field') 
-       if(associated(g_tracer%field3d_ptr)) then 
+    case ('field')
+       if(associated(g_tracer%field3d_ptr)) then
           array_ptr => g_tracer%field3d_ptr
        elseif(associated(g_tracer%field_3d)) then
           array_ptr => g_tracer%field_3d
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot get member variable: "//trim(name)//" % "//trim(member))
        endif
-    case ('vmove') 
+    case ('vmove')
        array_ptr => g_tracer%vmove
-    case ('vdiff') 
+    case ('vdiff')
        array_ptr => g_tracer%vdiff
-    case ('vdiffuse_impl') 
+    case ('vdiffuse_impl')
        array_ptr => g_tracer%vdiffuse_impl
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case ('vdiffusec_impl')
+       array_ptr => g_tracer%vdiffusec_impl
+    case ('boundary_forcing_tend')
+       array_ptr => g_tracer%boundary_forcing_tend
+
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
-  end subroutine g_tracer_get_3D  
+  end subroutine g_tracer_get_3D
 
   !Overload interface g_tracer_get_pointer for 2D fields
 
@@ -1800,34 +1901,34 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('alpha') 
+    case ('alpha')
        array_ptr => g_tracer%alpha
-    case ('csurf') 
+    case ('csurf')
        array_ptr => g_tracer%csurf
-    case ('sc_no') 
+    case ('sc_no')
        array_ptr => g_tracer%sc_no
-    case ('stf') 
+    case ('stf')
        array_ptr => g_tracer%stf
-    case ('stf_gas') 
+    case ('stf_gas')
        array_ptr => g_tracer%stf_gas
-    case ('deltap') 
+    case ('deltap')
        array_ptr => g_tracer%deltap
-    case ('kw') 
+    case ('kw')
        array_ptr => g_tracer%kw
-    case ('btf') 
+    case ('btf')
        array_ptr => g_tracer%btf
-    case ('btm_reservoir') 
+    case ('btm_reservoir')
        array_ptr => g_tracer%btm_reservoir
-    case ('trunoff') 
+    case ('trunoff')
        array_ptr => g_tracer%trunoff
-    case ('runoff_tracer_flux') 
+    case ('runoff_tracer_flux')
        array_ptr => g_tracer%runoff_tracer_flux
-    case ('drydep') 
+    case ('drydep')
        array_ptr => g_tracer%drydep
-    case ('wetdep') 
+    case ('wetdep')
        array_ptr => g_tracer%wetdep
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_get_2D
@@ -1837,7 +1938,7 @@ contains
   subroutine g_tracer_get_4D_val(g_tracer_list,name,member,array,isd,jsd)
     character(len=*),         intent(in) :: name
     character(len=*),         intent(in) :: member
-    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer
     integer,                  intent(in) :: isd,jsd
     real, dimension(isd:,jsd:,:,:), intent(out):: array
 
@@ -1853,14 +1954,14 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('field') 
-       if(associated(g_tracer%field)) then 
+    case ('field')
+       if(associated(g_tracer%field)) then
           array = g_tracer%field
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot get member variable: "//trim(name)//" % "//trim(member))
        endif
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(name)//" % "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(name)//" % "//trim(member))
     end select
 
   end subroutine g_tracer_get_4D_val
@@ -1870,7 +1971,7 @@ contains
   subroutine g_tracer_get_3D_val(g_tracer_list,name,member,array,isd,jsd,ntau,positive)
     character(len=*),         intent(in) :: name
     character(len=*),         intent(in) :: member
-    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer
     integer,                  intent(in) :: isd,jsd
     integer, optional,        intent(in) :: ntau
     logical, optional,        intent(in) :: positive
@@ -1891,26 +1992,30 @@ contains
     if(present(ntau)) tau = ntau
 
     select case(member)
-    case ('field') 
-       if(associated(g_tracer%field)) then 
+    case ('field')
+       if(associated(g_tracer%field)) then
           array(:,:,:) = g_tracer%field(:,:,:,tau)
-       elseif(associated(g_tracer%field3d_ptr)) then 
+       elseif(associated(g_tracer%field3d_ptr)) then
           array(:,:,:) = g_tracer%field3d_ptr(:,:,:)
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot get member variable: "//trim(name)//" % "//trim(member))
        endif
-          
+
        if(present(positive)) array = max(0.0,array)
-    case ('tendency') 
+    case ('tendency')
        array(:,:,:) = g_tracer%tendency(:,:,:)
-    case ('vmove') 
+    case ('vmove')
        array(:,:,:) = g_tracer%vmove(:,:,:)
-    case ('vdiff') 
+    case ('vdiff')
        array(:,:,:) = g_tracer%vdiff(:,:,:)
-    case ('vdiffuse_impl') 
+    case ('vdiffuse_impl')
        array(:,:,:) = g_tracer%vdiffuse_impl(:,:,:)
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case ('vdiffusec_impl')
+       array(:,:,:) = g_tracer%vdiffusec_impl(:,:,:)
+    case ('boundary_forcing_tend')
+       array(:,:,:) = g_tracer%boundary_forcing_tend(:,:,:)
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_get_3D_val
@@ -1920,7 +2025,7 @@ contains
   subroutine g_tracer_get_2D_val(g_tracer_list,name,member,array,isd,jsd)
     character(len=*),         intent(in) :: name
     character(len=*),         intent(in) :: member
-    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer
     integer,                  intent(in) :: isd,jsd
     real, dimension(isd:,jsd:), intent(out):: array
 
@@ -1936,34 +2041,34 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('alpha') 
+    case ('alpha')
        array = g_tracer%alpha
-    case ('csurf') 
+    case ('csurf')
        array = g_tracer%csurf
-    case ('sc_no') 
+    case ('sc_no')
        array = g_tracer%sc_no
-    case ('stf') 
+    case ('stf')
        array = g_tracer%stf
-    case ('stf_gas') 
+    case ('stf_gas')
        array = g_tracer%stf_gas
-    case ('deltap') 
+    case ('deltap')
        array = g_tracer%deltap
-    case ('kw') 
+    case ('kw')
        array = g_tracer%kw
-    case ('btf') 
+    case ('btf')
        array = g_tracer%btf
-    case ('btm_reservoir') 
+    case ('btm_reservoir')
        array = g_tracer%btm_reservoir
-    case ('trunoff') 
+    case ('trunoff')
        array = g_tracer%trunoff
-    case ('runoff_tracer_flux') 
+    case ('runoff_tracer_flux')
        array = g_tracer%runoff_tracer_flux
-    case ('drydep') 
+    case ('drydep')
        array = g_tracer%drydep
-    case ('wetdep') 
+    case ('wetdep')
        array = g_tracer%wetdep
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_get_2D_val
@@ -1973,7 +2078,7 @@ contains
   subroutine g_tracer_get_real(g_tracer_list,name,member,value)
     character(len=*),         intent(in) :: name
     character(len=*),         intent(in) :: member
-    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer
     real,                     intent(out):: value
 
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_get_real'
@@ -1988,12 +2093,12 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('sink_rate') 
+    case ('sink_rate')
        value = g_tracer%sink_rate
-    case ('const_init_value') 
+    case ('const_init_value')
        value = g_tracer%const_init_value
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_get_real
@@ -2003,8 +2108,8 @@ contains
   subroutine g_tracer_get_string(g_tracer_list,name,member,string)
     character(len=*),         intent(in) :: name
     character(len=*),         intent(in) :: member
-    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer 
-    character(len=fm_string_len), intent(out) :: string
+    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer
+    character(len=*), intent(out) :: string
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_get_string'
 
     if(.NOT. associated(g_tracer_list)) call mpp_error(FATAL, trim(sub_name)//&
@@ -2012,7 +2117,7 @@ contains
 
     g_tracer => g_tracer_list !Local pointer. Do not change the input pointer!
 
-    !If queried for 'name' return the %name of the head 
+    !If queried for 'name' return the %name of the head
     if(member .eq. 'name') then
        string=g_tracer%name
        return
@@ -2024,18 +2129,18 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('longname') 
+    case ('longname')
        string = g_tracer%longname
-    case ('alias') 
+    case ('alias')
        string = g_tracer%alias
-    case ('units') 
+    case ('units')
        string = g_tracer%units
-    case ('package') 
+    case ('package')
        string = g_tracer%package_name
-    case ('ocean_restart_file') 
+    case ('ocean_restart_file')
        string = g_tracer%ocean_restart_file
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_get_string
@@ -2071,23 +2176,32 @@ contains
     endif
 
     select case(member)
-    case ('alpha') 
+    case ('alpha')
        g_tracer%alpha  = w0*g_tracer%alpha + w1*array
     case ('csurf')
        g_tracer%csurf  = w0*g_tracer%csurf + w1*array
     case ('sc_no')
        g_tracer%sc_no  = w0*g_tracer%sc_no + w1*array
-    case ('stf') 
-       g_tracer%stf    = w0*g_tracer%stf + w1*array
-    case ('stf_gas') 
+    case ('stf')
+       ! Check for edge case where the new value is a weighted combination of old and new values
+       ! and the old value had runoff added to it later. In this case, the result would be
+       ! invalid if the new value did not also have runoff added to it (which is not known).
+       if (w1 < 1 .and. g_tracer%runoff_added_to_stf) then
+         call mpp_error(FATAL, trim(sub_name)//&
+           ": Cannot set stf to a weighted combination of values with and without runoff.")
+       else
+         g_tracer%stf    = w0*g_tracer%stf + w1*array
+         g_tracer%runoff_added_to_stf = .false.
+       endif
+    case ('stf_gas')
        g_tracer%stf_gas= w0*g_tracer%stf_gas + w1*array
-    case ('deltap') 
+    case ('deltap')
        g_tracer%deltap = w0*g_tracer%deltap + w1*array
-    case ('kw') 
+    case ('kw')
        g_tracer%kw     = w0*g_tracer%kw + w1*array
-    case ('btf') 
+    case ('btf')
        g_tracer%btf    = w0*g_tracer%btf + w1*array
-    case ('btm_reservoir') 
+    case ('btm_reservoir')
        g_tracer%btm_reservoir = w0*g_tracer%btm_reservoir + w1*array
     case ('trunoff')
        g_tracer%trunoff = w0*g_tracer%trunoff + w1*array
@@ -2097,8 +2211,8 @@ contains
        g_tracer%drydep = w0*g_tracer%drydep + w1*array
     case ('wetdep')
        g_tracer%wetdep = w0*g_tracer%wetdep + w1*array
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_set_2D
@@ -2130,24 +2244,28 @@ contains
     if(present(ntau)) tau = ntau
 
     select case(member)
-    case ('tendency') 
-       g_tracer%tendency  = array 
-    case ('field') 
-       if(associated(g_tracer%field)) then 
-          g_tracer%field(:,:,:,tau) = array(:,:,:) 
-       elseif(associated(g_tracer%field3d_ptr)) then 
-          g_tracer%field3d_ptr(:,:,:) = array(:,:,:) 
+    case ('tendency')
+       g_tracer%tendency  = array
+    case ('field')
+       if(associated(g_tracer%field)) then
+          g_tracer%field(:,:,:,tau) = array(:,:,:)
+       elseif(associated(g_tracer%field3d_ptr)) then
+          g_tracer%field3d_ptr(:,:,:) = array(:,:,:)
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot set member variable: "//trim(name)//" % "//trim(member))
-       endif      
-    case ('vmove') 
-       g_tracer%vmove  = array 
-    case ('vdiff') 
-       g_tracer%vdiff  = array 
-    case ('vdiffuse_impl') 
-       g_tracer%vdiffuse_impl  = array 
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+       endif
+    case ('vmove')
+       g_tracer%vmove  = array
+    case ('vdiff')
+       g_tracer%vdiff  = array
+    case ('vdiffuse_impl')
+       g_tracer%vdiffuse_impl  = array
+    case ('vdiffusec_impl')
+       g_tracer%vdiffusec_impl  = array
+    case ('boundary_forcing_tend')
+       g_tracer%boundary_forcing_tend  = array
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_set_3D
@@ -2180,8 +2298,8 @@ contains
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot set member variable: "//trim(name)//" % "//trim(member))
        endif
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_set_4D
@@ -2207,40 +2325,41 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('field') 
+    case ('field')
        if(associated(g_tracer%field)) then
           g_tracer%field = value !Set all elements to value
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot set member variable: "//trim(name)//" % "//trim(member))
        endif
-    case ('tendency') 
-       g_tracer%tendency  = value 
-    case ('alpha') 
-       g_tracer%alpha     = value 
-    case ('csurf') 
-       g_tracer%csurf     = value 
-    case ('sc_no') 
-       g_tracer%sc_no     = value 
-    case ('stf') 
-       g_tracer%stf       = value 
-    case ('stf_gas') 
-       g_tracer%stf_gas   = value 
-    case ('deltap') 
-       g_tracer%deltap    = value 
-    case ('kw') 
-       g_tracer%kw        = value 
-    case ('btf') 
-       g_tracer%btf       = value 
-    case ('trunoff') 
-       g_tracer%trunoff   = value 
-    case ('runoff_tracer_flux') 
-       g_tracer%runoff_tracer_flux = value 
-    case ('btm_reservoir') 
-       g_tracer%btm_reservoir = value 
-    case ('sink_rate') 
-       g_tracer%sink_rate = value 
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))   
+    case ('tendency')
+       g_tracer%tendency  = value
+    case ('alpha')
+       g_tracer%alpha     = value
+    case ('csurf')
+       g_tracer%csurf     = value
+    case ('sc_no')
+       g_tracer%sc_no     = value
+    case ('stf')
+       g_tracer%stf       = value
+       g_tracer%runoff_added_to_stf = .false.
+    case ('stf_gas')
+       g_tracer%stf_gas   = value
+    case ('deltap')
+       g_tracer%deltap    = value
+    case ('kw')
+       g_tracer%kw        = value
+    case ('btf')
+       g_tracer%btf       = value
+    case ('trunoff')
+       g_tracer%trunoff   = value
+    case ('runoff_tracer_flux')
+       g_tracer%runoff_tracer_flux = value
+    case ('btm_reservoir')
+       g_tracer%btm_reservoir = value
+    case ('sink_rate')
+       g_tracer%sink_rate = value
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a known member variable: "//trim(member))
     end select
 
   end subroutine g_tracer_set_real
@@ -2265,13 +2384,13 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('field') 
+    case ('field')
        if (associated(g_tracer%field )) then
           call mpp_error(NOTE, trim(sub_name) // ": Deallocating generic tracer "//trim(name)//" % "//trim(member))
           deallocate( g_tracer%field )
        endif
-       g_tracer%field  => array 
-    case default 
+       g_tracer%field  => array
+    case default
        call mpp_error(FATAL, trim(sub_name)//": Not a supported operation for member variable: "//trim(name)//" % "//trim(member))
     end select
 
@@ -2296,22 +2415,22 @@ contains
          ": No tracer in the list with name="//trim(name))
 
     select case(member)
-    case ('tendency') 
+    case ('tendency')
        if (associated( g_tracer%tendency )) then
           call mpp_error(NOTE, trim(sub_name) // ": Deallocating generic tracer "//trim(name)//" % "//trim(member))
           deallocate( g_tracer%tendency )
        endif
-       g_tracer%tendency  => array 
-    case ('field') 
+       g_tracer%tendency  => array
+    case ('field')
        if (associated( g_tracer%field )) then
           call mpp_error(NOTE, trim(sub_name) // ": Deallocating generic tracer "//trim(name)//" % "//trim(member))
           deallocate( g_tracer%field )
        endif
-       g_tracer%field3d_ptr  => array 
+       g_tracer%field3d_ptr  => array
 !       call set_cray_pointer_field(g_tracer%field,array,ilb,jlb)
 
-    case default 
-       call mpp_error(FATAL, trim(sub_name)//": Not a supported operation for member variable: "//trim(name)//" % "//trim(member))   
+    case default
+       call mpp_error(FATAL, trim(sub_name)//": Not a supported operation for member variable: "//trim(name)//" % "//trim(member))
     end select
 
   end subroutine g_tracer_set_pointer_3D
@@ -2338,14 +2457,14 @@ contains
   !   Get the pointer for the named tracer node
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !   
+  !
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_find(g_tracer,name)
   !  </TEMPLATE>
   !  <IN/OUT NAME="g_tracer" TYPE="type(g_tracer_type),    pointer">
   !   Head of the generic tracer list.
-  !   Upon return this will be a pointer to the tracer node called name or NULL if not found 
+  !   Upon return this will be a pointer to the tracer node called name or NULL if not found
   !  </IN/OUT>
   !  <IN NAME="name" TYPE="character(len=*)">
   !   Name of a tracer node
@@ -2362,8 +2481,8 @@ contains
     if(.NOT. associated(g_tracer)) call mpp_error(FATAL, trim(sub_name)//&
          ": No tracer in the list.")
 
-    !Go through the list of tracers 
-    do  
+    !Go through the list of tracers
+    do
        if(g_tracer%name == name .or. g_tracer%alias == name) exit
 
        !traverse the linked list till hit NULL
@@ -2375,7 +2494,7 @@ contains
        g_tracer => g_tracer%next
     enddo
   end subroutine g_tracer_find
-  
+
 
 !#######################################################################
   ! <SUBROUTINE NAME="g_tracer_column_int">
@@ -2457,10 +2576,10 @@ contains
     real,    dimension(:,:,:), pointer          :: grid_tmask
     integer                                     :: i
     integer                                     :: j
-    integer                                     :: k 
+    integer                                     :: k
     logical                                     :: continue_calc
     real, dimension(:,:), allocatable           :: depth_x
-    
+
     !  Set up the headers for stdout messages.
 
     if (present(caller)) then
@@ -2533,11 +2652,11 @@ contains
         enddo  !} i
       enddo  !} j
     enddo  !} k
-            
+
     return
 
   end subroutine g_tracer_column_int
-  
+
 
 !#######################################################################
   ! <SUBROUTINE NAME="g_tracer_flux_at_depth">
@@ -2619,10 +2738,10 @@ contains
     real,    dimension(:,:,:), pointer          :: grid_tmask
     integer                                     :: i
     integer                                     :: j
-    integer                                     :: k 
+    integer                                     :: k
     real, dimension(:,:), allocatable           :: depth_x
     logical                                     :: continue_calc
-    
+
     !  Set up the headers for stdout messages.
 
     if (present(caller)) then
@@ -2693,7 +2812,7 @@ contains
         endif  !}
       enddo  !} i
     enddo  !} j
-            
+
     return
 
   end subroutine g_tracer_flux_at_depth
@@ -2734,117 +2853,138 @@ contains
 
     g_tracer => g_tracer_list !Local pointer. Do not change the input pointer!
 
-    !Go through the list of tracers 
-    do  
+    !Go through the list of tracers
+    do
        tau_1=tau
        if (g_tracer%diag_id_field .gt. 0) then
           if(.NOT. g_tracer_is_prog(g_tracer)) tau_1=1
 
-       if(associated(g_tracer%field)) then 
+       if(associated(g_tracer%field)) then
           used = g_send_data(g_tracer%diag_id_field, (g_tracer%field(:,:,:,tau_1) * g_tracer%diag_field_scaling_factor), &
-               model_time, rmask = g_tracer_com%grid_tmask(:,:,:),& 
+               model_time, rmask = g_tracer_com%grid_tmask(:,:,:),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
-       elseif(associated(g_tracer%field3d_ptr)) then 
+       elseif(associated(g_tracer%field3d_ptr)) then
           used = g_send_data(g_tracer%diag_id_field, (g_tracer%field3d_ptr(:,:,:) * g_tracer%diag_field_scaling_factor), &
-               model_time, rmask = g_tracer_com%grid_tmask(:,:,:),& 
+               model_time, rmask = g_tracer_com%grid_tmask(:,:,:),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
 
        else
           call mpp_error(FATAL, trim(sub_name)//": Cannot send_diag field variable for "//trim(g_tracer%name) )
-       endif      
+       endif
 
 
        endif
 
        if (g_tracer%diag_id_vmove .gt. 0 .and. _ALLOCATED(g_tracer%vmove)) then
           used = g_send_data(g_tracer%diag_id_vmove, g_tracer%vmove(:,:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,:),& 
+               rmask = g_tracer_com%grid_tmask(:,:,:),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
        endif
 
        if (g_tracer%diag_id_vdiff .gt. 0 .and. _ALLOCATED(g_tracer%vdiff)) then
           used = g_send_data(g_tracer%diag_id_vdiff, g_tracer%vdiff(:,:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,:),& 
+               rmask = g_tracer_com%grid_tmask(:,:,:),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
        endif
 
+       if (g_tracer%diag_id_vdiffuse_impl .gt. 0 .and._ALLOCATED(g_tracer%vdiffuse_impl)) then
+          used = g_send_data(g_tracer%diag_id_vdiffuse_impl,g_tracer%vdiffuse_impl(:,:,:), model_time,&
+               rmask = g_tracer_com%grid_tmask(:,:,:),&
+               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
+               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec,ke_in=g_tracer_com%nk)
+       endif
+
+       if (g_tracer%diag_id_vdiffusec_impl .gt. 0 .and._ALLOCATED(g_tracer%vdiffusec_impl)) then
+          used = g_send_data(g_tracer%diag_id_vdiffusec_impl,g_tracer%vdiffusec_impl(:,:,:), model_time,&
+               rmask = g_tracer_com%grid_tmask(:,:,:),&
+               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
+               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec,ke_in=g_tracer_com%nk)
+       endif
+
+       if (g_tracer%diag_id_boundary_forcing_tend .gt. 0 .and._ALLOCATED(g_tracer%boundary_forcing_tend)) then
+          used = g_send_data(g_tracer%diag_id_boundary_forcing_tend,g_tracer%boundary_forcing_tend(:,:,:), model_time,&
+               rmask = g_tracer_com%grid_tmask(:,:,:),&
+               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
+               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec,ke_in=g_tracer_com%nk)
+       endif
+
        if (g_tracer%diag_id_aux .gt. 0) then
           used = g_send_data(g_tracer%diag_id_aux, g_tracer%tendency(:,:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,:),& 
+               rmask = g_tracer_com%grid_tmask(:,:,:),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
        endif
 
        if (g_tracer%diag_id_stf .gt. 0 .and. _ALLOCATED(g_tracer%stf)) then
           used = g_send_data(g_tracer%diag_id_stf, g_tracer%stf(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_stf_gas .gt. 0 .and. _ALLOCATED(g_tracer%stf_gas)) then
           used = g_send_data(g_tracer%diag_id_stf_gas, g_tracer%stf_gas(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_deltap .gt. 0 .and. _ALLOCATED(g_tracer%deltap)) then
           used = g_send_data(g_tracer%diag_id_deltap, g_tracer%deltap(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_kw .gt. 0 .and. _ALLOCATED(g_tracer%kw)) then
           used = g_send_data(g_tracer%diag_id_kw, g_tracer%kw(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_btf .gt. 0 .and. _ALLOCATED(g_tracer%btf)) then
           used = g_send_data(g_tracer%diag_id_btf, g_tracer%btf(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_btm .gt. 0 .and. _ALLOCATED(g_tracer%btm_reservoir)) then
           used = g_send_data(g_tracer%diag_id_btm, g_tracer%btm_reservoir(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_trunoff .gt. 0 .and. _ALLOCATED(g_tracer%trunoff)) then
           used = g_send_data(g_tracer%diag_id_trunoff, g_tracer%trunoff(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_alpha .gt. 0 .and. _ALLOCATED(g_tracer%alpha)) then
           used = g_send_data(g_tracer%diag_id_alpha, g_tracer%alpha(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_csurf .gt. 0 .and. _ALLOCATED(g_tracer%csurf)) then
           used = g_send_data(g_tracer%diag_id_csurf, g_tracer%csurf(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
 
        if (g_tracer%diag_id_sc_no .gt. 0 .and. _ALLOCATED(g_tracer%sc_no)) then
           used = g_send_data(g_tracer%diag_id_sc_no, g_tracer%sc_no(:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,1),& 
+               rmask = g_tracer_com%grid_tmask(:,:,1),&
                is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc,&
                ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec )
        endif
@@ -2856,86 +2996,8 @@ contains
 
   end subroutine g_tracer_send_diag
 
-
-  ! <SUBROUTINE NAME="g_tracer_diag">
-  !  <OVERVIEW>
-  !   Send diagnostics for all registered fields at finish (if in diag_table)
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !   Collectively sends out the diagnostics for all registered fields of all generic tracers
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   call g_tracer_diag(g_tracer_list,model_time , tau)
-  !  </TEMPLATE>
-  !  <IN NAME="g_tracer_list" TYPE="type(g_tracer_type),    pointer">
-  !   pointer to the head of the generic tracer list
-  !  </IN>
-  !  <IN NAME="model_time" TYPE="type(time_type)">
-  !   Time that the diagnostics is sent
-  !  </IN>
-  !  <IN NAME="tau" TYPE="integer">
-  !   The time step for the %field 4D field to be reported
-  !  </IN>
-  ! </SUBROUTINE>
-
-  subroutine g_tracer_diag(g_tracer_list, ilb, jlb, rho_dzt_tau, rho_dzt_taup1, model_time, tau, taup1, dtts)
-    type(g_tracer_type),    pointer    :: g_tracer_list
-    integer,                  intent(in) :: ilb
-    integer,                  intent(in) :: jlb
-    real, dimension(ilb:,jlb:,:),   intent(in) :: rho_dzt_tau
-    real, dimension(ilb:,jlb:,:),   intent(in) :: rho_dzt_taup1
-    type(time_type),        intent(in) :: model_time
-    integer,                  intent(in) :: tau
-    integer,                  intent(in) :: taup1
-    real,                     intent(in) :: dtts
-
-    type(g_tracer_type),    pointer    :: g_tracer
-    integer :: tau_1
-    logical :: used
-
-    character(len=fm_string_len), parameter :: sub_name = 'g_tracer_diag'
-
-    if(.NOT. associated(g_tracer_list)) call mpp_error(FATAL, trim(sub_name)//&
-         ": No tracer in the list.")
-
-    g_tracer => g_tracer_list !Local pointer. Do not change the input pointer!
-
-    !Go through the list of tracers 
-    do  
-       tau_1=taup1
-       if (g_tracer%diag_id_field_taup1 .gt. 0) then
-          if(.NOT. g_tracer_is_prog(g_tracer)) tau_1=1
-          used = g_send_data(g_tracer%diag_id_field_taup1, g_tracer%field(:,:,:,tau_1), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,:),& 
-               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
-               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
-       endif
-
-       if (g_tracer%diag_id_tendency .gt. 0  .and. g_tracer%prog) then
-          used = g_send_data(g_tracer%diag_id_tendency,&
-               (g_tracer%field(:,:,:,taup1)*rho_dzt_taup1(:,:,:) - g_tracer%field(:,:,:,tau)*rho_dzt_tau(:,:,:))/dtts, model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,:),& 
-               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
-               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
-       endif
-
-       if (g_tracer%diag_id_vdiffuse_impl .gt. 0 .and. _ALLOCATED(g_tracer%vdiffuse_impl)) then
-          used = g_send_data(g_tracer%diag_id_vdiffuse_impl, g_tracer%vdiffuse_impl(:,:,:), model_time,&
-               rmask = g_tracer_com%grid_tmask(:,:,:),& 
-               is_in=g_tracer_com%isc, js_in=g_tracer_com%jsc, ks_in=1,&
-               ie_in=g_tracer_com%iec, je_in=g_tracer_com%jec, ke_in=g_tracer_com%nk)
-       endif
-
-       !traverse the linked list till hit NULL
-       if(.NOT. associated(g_tracer%next)) exit
-       g_tracer => g_tracer%next
-    enddo
-
-  end subroutine g_tracer_diag
-
-
   subroutine g_tracer_traverse(g_tracer_list)
-    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer_list, g_tracer
 
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_traverse'
 
@@ -2944,8 +3006,8 @@ contains
 
     g_tracer => g_tracer_list !Local pointer. Do not change the input pointer!
 
-    !Go through the list of tracers 
-    do  
+    !Go through the list of tracers
+    do
        !do nothing
        !traverse the linked list till hit NULL
        if(.NOT. associated(g_tracer%next)) exit
@@ -2962,7 +3024,7 @@ contains
   !   Get the name of a particular tracer Node
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !   
+  !
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_get_name(g_tracer,string)
@@ -2976,7 +3038,7 @@ contains
   ! </SUBROUTINE>
 
   subroutine g_tracer_get_name(g_tracer,string)
-    type(g_tracer_type),    pointer    :: g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer
     character(len=*),        intent(out) :: string
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_get_name'
 
@@ -2987,7 +3049,7 @@ contains
   end subroutine g_tracer_get_name
 
   subroutine g_tracer_get_alias(g_tracer,string)
-    type(g_tracer_type),    pointer    :: g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer
     character(len=*),        intent(out) :: string
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_get_alias'
 
@@ -3002,19 +3064,19 @@ contains
   !   Is the tracer prognostic?
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !   
+  !
   !  </DESCRIPTION>
   !  <TEMPLATE>
-  !   flag = g_tracer_is_prog(g_tracer)  
+  !   flag = g_tracer_is_prog(g_tracer)
   !  </TEMPLATE>
   !  <IN NAME="g_tracer" TYPE="type(g_tracer_type),    pointer">
   !   Pointer to tracer node
   !  </IN>
   !  RETURNS .true. for prognostic tracer, .false. for diagnostic
   ! </SUBROUTINE>
-  function g_tracer_is_prog(g_tracer) 
+  function g_tracer_is_prog(g_tracer)
     logical :: g_tracer_is_prog
-    type(g_tracer_type),    pointer    :: g_tracer 
+    type(g_tracer_type),    pointer    :: g_tracer
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_is_prog'
 
     if(.NOT. associated(g_tracer)) call mpp_error(FATAL, trim(sub_name)//&
@@ -3028,7 +3090,7 @@ contains
   !   get the next tracer in the list
   !  </OVERVIEW>
   !  <DESCRIPTION>
-  !   
+  !
   !  </DESCRIPTION>
   !  <TEMPLATE>
   !   call g_tracer_get_next(g_tracer,g_tracer_next)
@@ -3041,7 +3103,7 @@ contains
   !  </IN>
   ! </SUBROUTINE>
   subroutine g_tracer_get_next(g_tracer,g_tracer_next)
-    type(g_tracer_type),    pointer    :: g_tracer,g_tracer_next 
+    type(g_tracer_type),    pointer    :: g_tracer,g_tracer_next
     character(len=fm_string_len), parameter :: sub_name = 'g_tracer_get_next'
 
     if(.NOT. associated(g_tracer)) call mpp_error(FATAL, trim(sub_name)//&
@@ -3050,6 +3112,73 @@ contains
     g_tracer_next => g_tracer%next
   end subroutine g_tracer_get_next
 
+!> Returns tracer arrays (nominally T and S) with massless layers filled with
+  !! sensible values, by diffusing vertically with a small but constant diffusivity.
+  subroutine g_tracer_vertfill(g_tracer, h, kappa_dt, tau, larger_h_denom)
+    type(g_tracer_type),    pointer  :: g_tracer
+    real, dimension(g_tracer_com%isd:,g_tracer_com%jsd:,:), intent(in) :: h
+    real,                   intent(in) :: kappa_dt
+    integer,                intent(in) :: tau
+    logical,      optional, intent(in) :: larger_h_denom !< Present and true, add a large
+    !! enough minimal thickness in the denominator of
+    !! the flux calculations so that the fluxes are
+    !! never so large as eliminate the transmission
+    !! of information across groups of massless layers.
+    ! Local variables
+    real :: ent(1:g_tracer_com%nk+1)  ! The diffusive entrainment (kappa*dt)/dz
+    ! between layers in a timestep [H ~> m or kg m-2].
+    real :: b1              ! A variable used by the tridiagonal solver [H-1 ~> m-1 or m2 kg-1]
+    real :: d1              ! A variable used by the tridiagonal solver [nondim], d1 = 1 - c1.
+    real :: c1(1:g_tracer_com%nk)     ! A variable used by the tridiagonal solver [nondim].
+    real :: kap_dt_x2                ! The 2*kappa_dt converted to H units [H2 ~> m2 or kg2 m-4].
+    real :: h_neglect                ! A negligible thickness [H ~> m or kg m-2], to allow for zero thicknesses.
+    real :: h0                       ! A negligible thickness to allow for zero thickness layers without
+    ! completely decoupling groups of layers [H ~> m or kg m-2].
+    ! Often 0 < h_neglect << h0.
+    real :: h_tr                     ! h_tr is h at tracer points with a tiny thickness
+    ! added to ensure positive definiteness [H ~> m or kg m-2].
+    integer :: i, j, k, is, ie, js, je, nz
+
+    h_neglect = 1.0e-20 !GV%H_subroundoff
+    kap_dt_x2 = (2.0*kappa_dt) !*GV%Z_to_H**2
+    h0 = h_neglect
+    if (present(larger_h_denom)) then
+       if (larger_h_denom) h0 = 1.0e-16*sqrt(kappa_dt) !*GV%Z_to_H
+    endif
+
+    if (kap_dt_x2 > 0.0) then
+       do j=g_tracer_com%jsc,g_tracer_com%jec ; do i=g_tracer_com%isc,g_tracer_com%iec
+       if (g_tracer_com%grid_tmask(i,j,1) > 0.5) then
+          nz=g_tracer_com%grid_kmt(i,j)
+          ent(2) = kap_dt_x2 / ((h(i,j,1)+h(i,j,2)) + h0)
+          h_tr = h(i,j,1) + h_neglect
+          b1 = 1.0 / (h_tr + ent(2))
+          d1 = b1 * h_tr
+          g_tracer%field(i,j,1,tau) = b1*h_tr*g_tracer%field(i,j,1,tau)
+          do k=2,nz-1
+             ent(K+1) = kap_dt_x2 / ((h(i,j,k)+h(i,j,k+1)) + h0) !eb(k+1)=ea(k)=ent(k)
+             h_tr = h(i,j,k) + h_neglect
+             c1(k) = ent(K) * b1 !eb(k-1)*b1
+             b1 = 1.0 / ((h_tr + d1*ent(K)) + ent(K+1))
+             d1 = b1 * (h_tr + d1*ent(K))
+             g_tracer%field(i,j,k,tau) = b1 * (h_tr   * g_tracer%field(i,j,k,tau) + &
+                                               ent(K) * g_tracer%field(i,j,k-1,tau))
+             !T_f(i,j,k) = b1(i) * (h_tr*T_in(i,j,k) + ent(i,K)*T_f(i,j,k-1))
+          enddo
+          c1(nz) = ent(nz) * b1
+          h_tr = h(i,j,nz) + h_neglect
+          b1 = 1.0 / (h_tr + d1*ent(nz))
+          g_tracer%field(i,j,nz,tau) = b1 * (h_tr    * g_tracer%field(i,j,nz,tau) + &
+                                             ent(nz) * g_tracer%field(i,j,nz-1,tau))
+          !T_f(i,j,nz) = b1(i) * (h_tr*T_in(i,j,nz) + ent(i,nz)*T_f(i,j,nz-1))
+          do k=nz-1,1,-1
+             g_tracer%field(i,j,k,tau) = g_tracer%field(i,j,k,tau) + c1(k+1)*g_tracer%field(i,j,k+1,tau)
+             !T_f(i,j,k) = T_f(i,j,k) + c1(i,k+1)*T_f(i,j,k+1)
+          enddo
+       endif
+       enddo;enddo
+    endif
+  end subroutine g_tracer_vertfill
   ! <SUBROUTINE NAME="g_tracer_vertdiff_G">
   !  <OVERVIEW>
   !   Vertical Diffusion of a tracer node
@@ -3061,19 +3190,20 @@ contains
   !   has units of mol/Kg
   !  </DESCRIPTION>
   !  <TEMPLATE>
-  !   call 
+  !   call
   !  </TEMPLATE>
   !  <IN NAME="" TYPE="">
-  !   
+  !
   !  </IN>
   ! </SUBROUTINE>
 
-  subroutine g_tracer_vertdiff_G(g_tracer, h_old, ea, eb, dt, kg_m2_to_H, m_to_H, tau, mom)
+  subroutine g_tracer_vertdiff_G(g_tracer, h_old, ea, eb, dt, kg_m2_to_H, m_to_H, tau, use_PressAlgorithm, do_vertfill_post)
     type(g_tracer_type),    pointer  :: g_tracer
     real, dimension(g_tracer_com%isd:,g_tracer_com%jsd:,:), intent(in) :: h_old, ea, eb
     real,                   intent(in) :: dt, kg_m2_to_H, m_to_H
     integer,                intent(in) :: tau
-    logical,                                                intent(in), optional :: mom
+    logical, optional ,     intent(in) :: use_PressAlgorithm
+    logical, optional,      intent(in) :: do_vertfill_post ! If true, use diffusion to reduce noise in vanished layers.
 
     ! Arguments: h_old -  Layer thickness before entrainment, in m or kg m-2.
     !                     In all the following comments the units of h_old are
@@ -3085,13 +3215,100 @@ contains
     !                         the units of h_old (H).
     !  (in)      m_to_H - A conversion factor that translates m into the units
     !                     of h_old (H).
-    !  (in,opt)  mom - If true, then called from MOM and don't do diagnostic,
-    !                  if false or not present, then not from MOM and do diagnostics.
+    !  (in,opt)  use_PressAlgorithm - If true, then use the Press algorithm for solving the tridiagonal system,
+    !                                  if false or not present, then use the default algorithm.
 
     !   This subroutine solves a tridiagonal equation for the final tracer
     ! concentrations after the dual-entrainments, and possibly sinking or surface
     ! and bottom sources, are applied.  The sinking is implemented with an
     ! fully implicit upwind advection scheme.
+    !
+    ! This subroutine implements a modified version of the classic tridiag algorithm
+    ! from the Numerical Recipes book by Press et,al (provided below for comparison).
+    ! The original tridiag algorithm exactly solves the tridiagonal system of equations
+    ! below for vector u given the vector r and coefficients a_k,b_k,c_k of:
+    !
+    !        a_{k} u_{k-1} + b_k u_k + c_{k} u_{k+1} = r_k
+    !
+    ! In the present application
+    !    r_k is the old (before update) tracer concentration field at level k
+    !    u_k is the new (after  update) tracer concentration field at level k
+    !    a_k = -ea(k)/h_old(k)
+    !    c_k = -eb(k)/h_old(k)
+    !    b_k = (h_old(k)+ea(k)+eb(k))/h_old(k)
+    !
+    ! The modifications of the original algorithm is to allow for surface and bottom fluxes
+    ! as well as possible sinking or swimming of the tracers.
+    !
+    ! In MOM6 models, all tracers are advected (both horizontally and vertically) by MOM6
+    ! and also horizontally diffused by MOM6 if they are registered as MOM6 tracers
+    ! (which is the case for generic tracers).
+    ! So there remains a need to vertically diffuse tracers
+    ! (and, if necessary vertically advect tracers due to sinking or swimming) separately by tracer packages
+    ! (T&S vertdiff is again handled by MOM6).
+    !
+    ! So, why is the vertdiff needed at all?
+    !
+    ! The clue is in section A4 of Griffies et.al 2020:
+    ! https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2019MS001954
+    !  "the continuity equation has no subgrid scale operator even after coarse graining;
+    ! that is, there is no diffusion of seawater mass, and hence, there are no mass
+    ! sources/sinks in the ocean interior. This property means that a diffusive flux of
+    ! salt crossing the boundary of a fluid element balances an oppositely directed
+    ! diffusive flux of freshwater, thus leaving the fluid element with a constant mass
+    ! but with a nonconstant salt  and freshwater content."
+    !
+    ! Hence, in a vertical grid box of thickness h, if an amount of seawater mass is
+    ! entered/diffused in, then the tracers must "diffuse" out of the box to keep the
+    ! total watermass in the box constant constant.
+    ! In other words we must satisfy the following two constraints after such diffusive
+    ! processes of water mass has occured (due to numerical diffusion of seawater mass?):
+    !
+    ! Final water  mass = Initial water  mass + water  mass entered
+    ! Final tracer mass = Initial tracer mass + tracer mass entered
+    !
+    ! hI = length equivalent of Initial water mass in layer k
+    ! hF = length equivalent of Final   water mass in layer k
+    ! ea = length equivalent of water mass entered from layer above
+    ! eb = length equivalent of water mass entered from layer below
+    ! tI_k = Intial tracer concentration in layer k
+    ! tF_k = Final  tracer concentration in layer k
+    !
+    ! The two equations above become:
+    ! hF      = hI      + ea          + eb            (1)
+    ! hF*tF_k = hI*tI_k + ea*tF_{k-1} + eb*tF_{k+1}   (2)
+    !
+    ! Or after replacing hF from (1) into (2) we get:
+    !
+    ! -ea*tF_{k-1} + (hI+ea+eb)*tF_k -eb*tF_{k+1} = hI*tI_k  (3)
+    !
+    ! This is a tridiagonal system for unknown vector tF:
+    !
+    !  a_k*tF_{k-1} + b_k*tF_k c_k*tF_{k+1} = tI_k    k=1,...,N
+    !    a_k = -ea(k)/h_old(k)
+    !    c_k = -eb(k)/h_old(k)
+    !    b_k = (h_old(k)+ea(k)+eb(k))/h_old(k)
+    !
+    ! This algorithm can be extended for the cases that the tracers have a surface or bottom
+    ! flux. In such cases the length-equivalent of tracer mass entered  to the top or bottom
+    ! layer can simply be added (with the sign of flux considered) to the right hand side
+    ! of equation (3) for k=1 and k=N equations (i.e., hI*tI_1 and hI*tI_N) .
+    !
+    !
+    ! So vertdiff is to fill the void of subgrid scale processes to correct for the
+    ! vertical advection and diffusion relative to the fluid flow.
+    ! We include the sinking (and swimming) of tracers (due to gravity or active processes)
+    ! in this "diffusive" correction.
+    ! Suppose a tracer sinks a distance s(k) (in the layer above layer k) in each timestep.
+    ! Then the tracer mass entered into layer k from the layer above, ea(k),
+    ! is enhanced by the tracer mass that has sinked into layer k from layer above in that
+    ! timestep, s(k). So the net effect is that ea(k) being replaced by ea(k)+s(k) in
+    ! tracer equation (2) for k=2,...,N. Similarly eb(k) should be replaced by eb(k)-s(k+1) :
+    !
+    ! -(ea+s)*tF_{k-1} + (hI+ea+eb)*tF_k -(eb-s(k+1))*tF_{k+1} = hI*tI_k
+    !
+    ! This translates into a(k) --> a(k)+s(k) and c(k) --> c(k)-s(k+1) in the Press et.al. algorithm
+    !
 
     real :: sink_dist(1:g_tracer_com%nk+1)    ! The distance the tracer sinks in a time step, in H.
     real :: sfc_src      ! The time-integrated surface source of the tracer, in
@@ -3110,26 +3327,19 @@ contains
     real :: b_denom_1    ! The first term in the denominator of b1, in H.
     real :: H_to_kg_m2   ! 1 / kg_m2_to_H.
     integer :: i, j, k, nz
-    logical :: do_diagnostic
+    real, dimension(1:g_tracer_com%nk) :: a,b,c,f_old !local vars used in Press algorithm
+    logical :: use_PressEtAl_in_vertdiff=.false.
+    real, parameter :: KD_SMOOTH = 1.0E-06 ! Diffusion coefficient for reducing noise in vanished layers.
 
+    if(present(use_PressAlgorithm)) use_PressEtAl_in_vertdiff = use_PressAlgorithm
     !
     !   Save the current state for calculation of the implicit vertical diffusion term
     !
-
-    if (g_tracer%diag_id_vdiffuse_impl .gt. 0) then
-      if (present(mom)) then
-        do_diagnostic = .not. mom
-      else
-        do_diagnostic = .false.
-      endif
-    else
-      do_diagnostic = .false.
-    endif
-    if (do_diagnostic) then
+    if (g_tracer%diag_id_vdiffuse_impl .gt. 0 .or. g_tracer%diag_id_vdiffusec_impl .gt. 0) then
       do j = g_tracer_com%jsc, g_tracer_com%jec
          do i = g_tracer_com%isc, g_tracer_com%iec
             do k = 1, g_tracer_com%nk
-               g_tracer%vdiffuse_impl(i,j,k) = g_tracer%field(i,j,k,tau) 
+               g_tracer%vdiffuse_impl(i,j,k) = g_tracer%field(i,j,k,tau)
             enddo
          enddo
       enddo
@@ -3140,391 +3350,171 @@ contains
 
     sink_dist = (dt*g_tracer%sink_rate) * m_to_H
 
-    do j=g_tracer_com%jsc,g_tracer_com%jec ; do i=g_tracer_com%isc,g_tracer_com%iec 
+    do j=g_tracer_com%jsc,g_tracer_com%jec ; do i=g_tracer_com%isc,g_tracer_com%iec
 
        if (g_tracer_com%grid_tmask(i,j,1) > 0.5) then
 
           nz=g_tracer_com%grid_kmt(i,j)
 
           if (g_tracer%move_vertical) then
-	    do k=2,nz; sink_dist(k) = (dt*g_tracer%vmove(i,j,k)) * m_to_H; enddo
-	  endif
-          sfc_src = 0.0 ; btm_src = 0.0 
+             do k=2,(nz+1); sink_dist(k) = (dt*g_tracer%vmove(i,j,k-1)) * m_to_H; enddo
+          endif
 
           ! Find the sinking rates at all interfaces, limiting them if necesary
           ! so that the characteristics do not cross within a timestep.
           !   If a non-constant sinking rate were used, that would be incorprated
           ! here.
           if (_ALLOCATED(g_tracer%btm_reservoir)) then
-             do k=2,nz 
-                sink(k) = sink_dist(k) ; h_minus_dsink(k) = h_old(i,j,k)
-             enddo
-             sink(nz+1) = sink_dist(nz+1) 
+             sink(nz+1) = sink_dist(nz+1)
           else
-             sink(nz+1) = 0.0 
-             ! Find the limited sinking distance at the interfaces.
-             do k=nz,2,-1
-                if (sink(k+1) >= sink_dist(k)) then
-                   sink(k) = sink_dist(k)
-                   h_minus_dsink(k) = h_old(i,j,k) + (sink(k+1) - sink(k))
-                elseif (sink(k+1) + h_old(i,j,k) < sink_dist(k)) then
-                   sink(k) = sink(k+1) + h_old(i,j,k)
-                   h_minus_dsink(k) = 0.0
-                else
-                   sink(k) = sink_dist(k)
-                   h_minus_dsink(k) = (h_old(i,j,k) + sink(k+1)) - sink(k)
-                endif
-             enddo
+             sink(nz+1) = 0.0
+             sink_dist(nz+1) = 0.0
           endif
+
+          !Avoid sinking tracers with negative concentrations
+          !do k=2,nz+1
+          !   if(g_tracer%field(i,j,k-1,tau) < 0.0)
+          !     sink(k) = 0.0
+          !     sink_dist(k) = 0.0
+          !   endif
+          !enddo
+
+          ! Find the limited sinking distance at the interfaces.
+          do k=nz,2,-1
+             if (sink(k+1) >= sink_dist(k)) then
+                sink(k) = sink_dist(k)
+                h_minus_dsink(k) = h_old(i,j,k) + (sink(k+1) - sink(k))
+             elseif (sink(k+1) + h_old(i,j,k) < sink_dist(k)) then
+                sink(k) = sink(k+1) + h_old(i,j,k)
+                h_minus_dsink(k) = 0.0
+             else
+                sink(k) = sink_dist(k)
+                h_minus_dsink(k) = (h_old(i,j,k) + sink(k+1)) - sink(k)
+             endif
+          enddo
 
           sink(1) = 0.0 ; h_minus_dsink(1) = (h_old(i,j,1) + sink(2))
 
-          !Avoid sinking tracers with negative concentrations
-          do k=2,nz+1
-             if(g_tracer%field(i,j,k-1,tau) <= 0.0) sink(k) = 0.0
-          enddo
-
-          ! Now solve the tridiagonal equation for the tracer concentrations.
-
-          b_denom_1 = h_minus_dsink(1) + ea(i,j,1)
-          b1 = 1.0 / (b_denom_1 + eb(i,j,1))
-          d1 = b_denom_1 * b1
-
+          !Prepare surface and bottom fluxes
+          sfc_src = 0.0 ; btm_src = 0.0
           if (_ALLOCATED(g_tracer%stf)) sfc_src = (g_tracer%stf(i,j)*dt)*kg_m2_to_H
-
-          g_tracer%field(i,j,1,tau) = b1*(h_old(i,j,1)*g_tracer%field(i,j,1,tau) + sfc_src)
-
-          do k=2,nz-1 
-             c1(k) = eb(i,j,k-1) * b1
-             b_denom_1 = h_minus_dsink(k) + d1 * (ea(i,j,k) + sink(k))
-             b1 = 1.0 / (b_denom_1 + eb(i,j,k))
-             d1 = b_denom_1 * b1
-
-             g_tracer%field(i,j,k,tau) = b1 * (h_old(i,j,k) * g_tracer%field(i,j,k,tau) + &
-                  (ea(i,j,k) + sink(k)) * g_tracer%field(i,j,k-1,tau))
-          enddo
-
-
-          c1(nz) = eb(i,j,nz-1) * b1
-          b_denom_1 = h_minus_dsink(nz) + d1 * (ea(i,j,nz) + sink(nz))
-          b1 = 1.0 / (b_denom_1 + eb(i,j,nz))
-
           if (_ALLOCATED(g_tracer%btf)) btm_src = (-g_tracer%btf(i,j)*dt)*kg_m2_to_H
 
-          g_tracer%field(i,j,nz,tau) = b1 * ((h_old(i,j,nz) * g_tracer%field(i,j,nz,tau) + btm_src) + &
-               (ea(i,j,nz) + sink(nz)) * g_tracer%field(i,j,nz-1,tau))
+          ! Now solve the tridiagonal equation for the tracer concentrations.
+          if(.NOT. use_PressEtAl_in_vertdiff) then !GOLD algorithm
+            b_denom_1 = h_minus_dsink(1) + ea(i,j,1)
+            b1 = 1.0 / (b_denom_1 + eb(i,j,1))
+            d1 = b_denom_1 * b1
 
-          if (_ALLOCATED(g_tracer%btm_reservoir)) then 
+            g_tracer%field(i,j,1,tau) = b1*(h_old(i,j,1)*g_tracer%field(i,j,1,tau) + sfc_src)
+            !Forward sweep
+            do k=2,nz-1
+               c1(k) = eb(i,j,k-1) * b1
+               b_denom_1 = h_minus_dsink(k) + d1 * (ea(i,j,k) + sink(k))
+               b1 = 1.0 / (b_denom_1 + eb(i,j,k))
+               d1 = b_denom_1 * b1
+
+               g_tracer%field(i,j,k,tau) = b1 * (h_old(i,j,k) * g_tracer%field(i,j,k,tau) + &
+                     (ea(i,j,k) + sink(k)) * g_tracer%field(i,j,k-1,tau))
+            enddo
+
+            c1(nz) = eb(i,j,nz-1) * b1
+            b_denom_1 = h_minus_dsink(nz) + d1 * (ea(i,j,nz) + sink(nz))
+            b1 = 1.0 / (b_denom_1 + eb(i,j,nz))
+
+            g_tracer%field(i,j,nz,tau) = b1 * ((h_old(i,j,nz) * g_tracer%field(i,j,nz,tau) + btm_src) + &
+                  (ea(i,j,nz) + sink(nz)) * g_tracer%field(i,j,nz-1,tau))
+            !Backward sweep
+            do k=nz-1,1,-1
+               g_tracer%field(i,j,k,tau) = g_tracer%field(i,j,k,tau) + c1(k+1)*g_tracer%field(i,j,k+1,tau)
+            enddo
+          else !use PressEtAl algorithm
+            g_tracer%field(i,j,1,tau)  = g_tracer%field(i,j,1,tau)  + sfc_src/h_old(i,j,1)
+            g_tracer%field(i,j,nz,tau) = g_tracer%field(i,j,nz,tau) + btm_src/h_old(i,j,nz)
+            do k=1,nz
+               a(k)= -(ea(i,j,k)+sink(k))/h_old(i,j,k)
+               c(k)= -eb(i,j,k)/h_old(i,j,k)
+               b(k)=  (h_old(i,j,k)+eb(i,j,k)+ea(i,j,k)+sink(k+1))/h_old(i,j,k)
+               f_old(k)= g_tracer%field(i,j,k,tau)
+            enddo
+            call tridiag_solver_Press_et_al(a,b,c,f_old,g_tracer%field(i,j,:,tau),nz)
+          endif
+
+          if (_ALLOCATED(g_tracer%btm_reservoir)) then
              g_tracer%btm_reservoir(i,j) = g_tracer%btm_reservoir(i,j) + &
                  (sink(nz+1)*g_tracer%field(i,j,nz,tau))*H_to_kg_m2
           endif
-
-          do k=nz-1,1,-1
-             g_tracer%field(i,j,k,tau) = g_tracer%field(i,j,k,tau) + c1(k+1)*g_tracer%field(i,j,k+1,tau)
-          enddo
 
         endif !(g_tracer_com%grid_tmask(i,j,1) > 0.5)
 
     enddo; enddo ! i,j
 
-    !
-    !   Calculate the implicit vertical diffusion term
-    !   (Note: not sure if this needs any unit conversion)
-    !
+    ! Do some additional diffusion if requested.
+    ! This can help smooth irregularities in the vanished layers.
+    if (present(do_vertfill_post)) then
+        if (do_vertfill_post) then
+            call g_tracer_vertfill(g_tracer, h_old, KD_SMOOTH*dt, tau=1)
+        endif
+    endif
 
-    if (do_diagnostic) then
+   !
+   !   Calculate the implicit vertical diffusion term
+   !   (Note: not sure if this needs any unit conversion)
+   !
+   if (g_tracer%diag_id_vdiffuse_impl .gt. 0 .or. g_tracer%diag_id_vdiffusec_impl .gt. 0) then
       do j = g_tracer_com%jsc, g_tracer_com%jec
          do i = g_tracer_com%isc, g_tracer_com%iec
             do k = 1, g_tracer_com%nk
-               g_tracer%vdiffuse_impl(i,j,k) = g_tracer_com%grid_tmask(i,j,k) *   &
-                    (g_tracer%field(i,j,k,tau) - g_tracer%vdiffuse_impl(i,j,k)) / dt
+               !liao: let h_old into vdiffuse and this term is content tendency
+               g_tracer%vdiffusec_impl(i,j,k) = g_tracer_com%grid_tmask(i,j,k) * &
+                    (g_tracer%field(i,j,k,tau) - g_tracer%vdiffuse_impl(i,j,k))/ dt
+               g_tracer%vdiffuse_impl(i,j,k) = h_old(i,j,k)*g_tracer_com%grid_tmask(i,j,k) *   &
+                    (g_tracer%field(i,j,k,tau) - g_tracer%vdiffuse_impl(i,j,k))/ dt
             enddo
          enddo
       enddo
-    endif
-
+   endif
   end subroutine g_tracer_vertdiff_G
 
-  ! <SUBROUTINE NAME="g_tracer_vertdiff_M">
-  !  <OVERVIEW>
-  !   Vertical Diffusion of a tracer node
-  !  </OVERVIEW>
-  !  <DESCRIPTION>
-  !   This subroutine solves a tridiagonal equation to find and set values of vertically diffused field for a tracer node.
-  !   This is designed to calculate entrainments for MOM tracers and then call the g_tracer_vertdiff_G() above.
-  !  </DESCRIPTION>
-  !  <TEMPLATE>
-  !   call 
-  !  </TEMPLATE>
-  !  <IN NAME="" TYPE="">
-  !   
-  !  </IN>
-  ! </SUBROUTINE>
-
-  subroutine g_tracer_vertdiff_M(g_tracer,dh, dhw, diff_cbt, dt, rho0,tau)
-    type(g_tracer_type),    pointer  :: g_tracer
-    real, dimension(g_tracer_com%isd:,g_tracer_com%jsd:,:), intent(in) :: dh, diff_cbt
-    real, dimension(g_tracer_com%isd:,g_tracer_com%jsd:,0:), intent(in) :: dhw
-    real,                   intent(in) :: dt,rho0
-    integer,                intent(in) :: tau
-
-    real, dimension(g_tracer_com%isd:g_tracer_com%ied,0:g_tracer_com%nk) ::  a,b,c, e, f, a1, c1
-    real, dimension(g_tracer_com%isd:g_tracer_com%ied,0:g_tracer_com%nk) ::  wposu, wnegu, wposl, wnegl
-    real, dimension(g_tracer_com%isd:g_tracer_com%ied,g_tracer_com%jsd:g_tracer_com%jed,0:g_tracer_com%nk) ::  dcb
-    real, dimension(g_tracer_com%isd:g_tracer_com%ied) :: bet
-
-    real, dimension(:,:,:), allocatable    :: ea, eb
-    integer :: i, j, k, km1, kp1
-    real :: eps, factu, factl, wabsu, wabsl, fact1, fact2
-    logical :: GOLDtridiag = .true.
-    logical :: IOWtridiag  = .false.
-    
-    GOLDtridiag = .true.
-    IOWtridiag  = .false.
-    if (g_tracer%move_vertical) then
-       GOLDtridiag = .false.
-       IOWtridiag  = .true.
-    endif
-    
-    eps = 1.e-30
-
-    !
-    !   Save the current state for calculation of the implicit vertical diffusion term
-    !
-
-    if (g_tracer%diag_id_vdiffuse_impl .gt. 0) then
-      do j = g_tracer_com%jsc, g_tracer_com%jec
-         do i = g_tracer_com%isc, g_tracer_com%iec
-            do k = 1, g_tracer_com%nk
-               g_tracer%vdiffuse_impl(i,j,k) = g_tracer%field(i,j,k,tau) 
-            enddo
-         enddo
-      enddo
-    endif
-
-    !
-    !Add the contribution of K33_implicit to the diffusivity
-    !
-    !g_tracer%tendency should contain T_prog(n)%K33_implicit or be zero
-    !!nnz: This is not really "tendency". Change name to something else like aux_array!
-    do j=g_tracer_com%jsc,g_tracer_com%jec
-       do i=g_tracer_com%isc,g_tracer_com%iec
-          do k=1,g_tracer_com%nk
-             dcb(i,j,k) = rho0*diff_cbt(i,j,k) + g_tracer%tendency(i,j,k) 
-          enddo
-       enddo
-    enddo
-    if (g_tracer%diff_vertical) then
-      do j=g_tracer_com%jsc,g_tracer_com%jec
-        do i=g_tracer_com%isc,g_tracer_com%iec
-           do k=1,g_tracer_com%nk
-             dcb(i,j,k) = dcb(i,j,k) + rho0*g_tracer%vdiff(i,j,k) 
-           enddo
-        enddo
-      enddo
-    endif
-    !
-    !The following two alternatives for solving the tridiagonal equation produce exact same results.
-    !The choice between them should come from performance testing. I have not done this yet.
-    !
-
-    if(GOLDtridiag) then
-
-       !===== 1 ===================
-       !Via GOLD's vertdiff routine
-       !===========================
-       !            
-       !h_old(i,j,k) = dh(i,j,k) (in kg m-2)
-
-       allocate(   ea(g_tracer_com%isd:g_tracer_com%ied,g_tracer_com%jsd:g_tracer_com%jed,1:g_tracer_com%nk))
-       allocate(   eb(g_tracer_com%isd:g_tracer_com%ied,g_tracer_com%jsd:g_tracer_com%jed,1:g_tracer_com%nk))
-
-       do j=g_tracer_com%jsc,g_tracer_com%jec 
-          do i=g_tracer_com%isc,g_tracer_com%iec
-
-             ea(i,j,1) = 0.0 
-             do k=2,g_tracer_com%nk
-                ea(i,j,k) = dt * g_tracer_com%grid_tmask(i,j,k)  *dcb(i,j,k-1) /dhw(i,j,k-1)
-             enddo
-
-             do k=1,g_tracer_com%nk-1
-                eb(i,j,k) = dt * g_tracer_com%grid_tmask(i,j,k+1)*dcb(i,j,k)   /dhw(i,j,k)
-             enddo
-             eb(i,j,g_tracer_com%nk) = 0.0 
-          enddo
-       enddo
-       !Note: dh, ea, and eb have units here of kg m-2.
-       call g_tracer_vertdiff_G(g_tracer, dh, ea, eb, dt, 1.0, rho0, tau, mom = .true.)
-
-       !Mask out the field over "land" (land under Ocean)
-       g_tracer%field(:,:,:,tau) = g_tracer%field(:,:,:,tau) * g_tracer_com%grid_tmask(:,:,:)
-
-       deallocate(ea, eb)
-
-    elseif(IOWtridiag) then
-
-       !
-       !OR 
-       !
-       !===== 2 ===================
-       !Via MOM's invtri routine with vertical movement added
-       !===========================
-       !
-       !This is borrowed from MOM invtri
-       !     call invtri (T_prog(n)%field(:,:,:,taup1), T_prog(n)%stf, &
-       !                  T_prog(n)%btf, wrk2(:,:,:), dtime_t, Grd%kmt,&
-       !                  Grd%tmask, Thickness%rho_dzt(:,:,:,taup1), Thickness%dzwt, aidif, nk) 
-       !
-       do j=g_tracer_com%jsc,g_tracer_com%jec
-          do k=1,g_tracer_com%nk
-             km1   = max(1,k-1)
-             kp1   = min(k+1,g_tracer_com%nk)
-             do i=g_tracer_com%isc,g_tracer_com%iec
-                fact1  = dt/dh(i,j,k)
-		fact2  = rho0*fact1*0.5
-		factu  = fact1/dhw(i,j,km1)
-                factl  = fact1/dhw(i,j,k)
-		wabsu       = abs(g_tracer%vmove(i,j,km1))
-		wposu(i,k)  = fact2*(g_tracer%vmove(i,j,km1) + wabsu)*g_tracer_com%grid_tmask(i,j,k)
-		wnegu(i,k)  = fact2*(g_tracer%vmove(i,j,km1) - wabsu)*g_tracer_com%grid_tmask(i,j,k)
-		wabsl       = abs(g_tracer%vmove(i,j,k))
-		wposl(i,k)  = fact2*(g_tracer%vmove(i,j,k  ) + wabsl)*g_tracer_com%grid_tmask(i,j,kp1)
-		wnegl(i,k)  = fact2*(g_tracer%vmove(i,j,k  ) - wabsl)*g_tracer_com%grid_tmask(i,j,kp1)
-                a1(i,k) = dcb(i,j,km1)*factu*g_tracer_com%grid_tmask(i,j,k)  
-                c1(i,k) = dcb(i,j,k)  *factl*g_tracer_com%grid_tmask(i,j,kp1)
-                a(i,k) = -(a1(i,k) - wnegu(i,k))
-                c(i,k) = -(c1(i,k) + wposl(i,k))
-                f(i,k) = g_tracer%field(i,j,k,tau)*g_tracer_com%grid_tmask(i,j,k) 
-                b(i,k) = 1.0 + a1(i,k) + c1(i,k) - wnegl(i,k) + wposu(i,k)
-             enddo
-          enddo
-
-          do i=g_tracer_com%isc,g_tracer_com%iec
-             a1(i,1)  = 0.0
-	     wnegu(i,1) = 0.0; wposu(i,1) = 0.0
-	     a(i,1)  = 0.0
-             c1(i,g_tracer_com%nk) = 0.0
-	     wposl(i,g_tracer_com%nk) = 0.0; wnegl(i,g_tracer_com%nk) = 0.0 
-             c(i,g_tracer_com%nk) = 0.0
-             b(i,1)  = 1.0 + a1(i,1) + c1(i,1) - wnegl(i,1) + wposu(i,1)
-             b(i,g_tracer_com%nk) = 1.0 + a1(i,g_tracer_com%nk) + c1(i,g_tracer_com%nk) &
-	                                - wnegl(i,g_tracer_com%nk) + wposu(i,g_tracer_com%nk)
-
-             ! top and bottom b.c.
-             if (_ALLOCATED(g_tracer%stf)) &
-                  f(i,1) = g_tracer%field(i,j,1,tau) + g_tracer%stf(i,j)*dt*g_tracer_com%grid_tmask(i,j,1)/dh(i,j,1)
-             if (_ALLOCATED(g_tracer%btf)) then
-                k = max(2,g_tracer_com%grid_kmt(i,j))
-                f(i,k) = g_tracer%field(i,j,k,tau) - g_tracer%btf(i,j)*dt*g_tracer_com%grid_tmask(i,j,k)/dh(i,j,k)
-             endif
-          enddo
-
-          ! decomposition and forward substitution
-          do i=g_tracer_com%isc,g_tracer_com%iec
-             bet(i) = g_tracer_com%grid_tmask(i,j,1)/(b(i,1) + eps)
-             g_tracer%field(i,j,1,tau) = f(i,1)*bet(i)
-          enddo
-          do k=2,g_tracer_com%nk
-             do i=g_tracer_com%isc,g_tracer_com%iec
-                e(i,k) = c(i,k-1)*bet(i)
-                bet(i) = g_tracer_com%grid_tmask(i,j,k)/(b(i,k) - a(i,k)*e(i,k) + eps)
-                g_tracer%field(i,j,k,tau) = (f(i,k) - a(i,k)*g_tracer%field(i,j,k-1,tau))*bet(i)
-             enddo
-          enddo
-
-          ! back substitution
-          do k=g_tracer_com%nk-1,1,-1
-             do i=g_tracer_com%isc,g_tracer_com%iec
-                g_tracer%field(i,j,k,tau) = g_tracer%field(i,j,k,tau) - e(i,k+1)*g_tracer%field(i,j,k+1,tau)
-             enddo
-          enddo
-       enddo
-    else
-
-       !
-       !OR 
-       !
-       !===== 2 ===================
-       !Via MOM's invtri routine. Works only for sink_rate=0
-       !===========================
-       !
-       !This is borrowed from MOM invtri
-       !     call invtri (T_prog(n)%field(:,:,:,taup1), T_prog(n)%stf, &
-       !                  T_prog(n)%btf, wrk2(:,:,:), dtime_t, Grd%kmt,&
-       !                  Grd%tmask, Thickness%rho_dzt(:,:,:,taup1), Thickness%dzwt, aidif, nk) 
-       !
-       do j=g_tracer_com%jsc,g_tracer_com%jec
-          do k=1,g_tracer_com%nk
-             km1   = max(1,k-1)
-             kp1   = min(k+1,g_tracer_com%nk)
-             do i=g_tracer_com%isc,g_tracer_com%iec
-                factu  = dt/(dhw(i,j,k-1)*dh(i,j,k))
-                factl  = dt/(dhw(i,j,k)*dh(i,j,k))
-                a(i,k) = -dcb(i,j,km1)*factu*g_tracer_com%grid_tmask(i,j,k)
-                c(i,k) = -dcb(i,j,k)  *factl*g_tracer_com%grid_tmask(i,j,kp1)
-                f(i,k) = g_tracer%field(i,j,k,tau)*g_tracer_com%grid_tmask(i,j,k) 
-                b(i,k) = 1.0 - a(i,k) - c(i,k)
-             enddo
-          enddo
-
-          do i=g_tracer_com%isc,g_tracer_com%iec
-             a(i,1)  = 0.0
-             c(i,g_tracer_com%nk) = 0.0
-             b(i,1)  = 1.0 - a(i,1) - c(i,1)
-             b(i,g_tracer_com%nk) = 1.0 - a(i,g_tracer_com%nk) - c(i,g_tracer_com%nk)
-
-             ! top and bottom b.c.
-             if (_ALLOCATED(g_tracer%stf)) &
-                  f(i,1) = g_tracer%field(i,j,1,tau) + g_tracer%stf(i,j)*dt*g_tracer_com%grid_tmask(i,j,1)/dh(i,j,1)
-             if (_ALLOCATED(g_tracer%btf)) then
-                k = max(2,g_tracer_com%grid_kmt(i,j))
-                f(i,k) = g_tracer%field(i,j,k,tau) - g_tracer%btf(i,j)*dt*g_tracer_com%grid_tmask(i,j,k)/dh(i,j,k)
-             endif
-          enddo
-
-          ! decomposition and forward substitution
-          do i=g_tracer_com%isc,g_tracer_com%iec
-             bet(i) = g_tracer_com%grid_tmask(i,j,1)/(b(i,1) + eps)
-             g_tracer%field(i,j,1,tau) = f(i,1)*bet(i)
-          enddo
-          do k=2,g_tracer_com%nk
-             do i=g_tracer_com%isc,g_tracer_com%iec
-                e(i,k) = c(i,k-1)*bet(i)
-                bet(i) = g_tracer_com%grid_tmask(i,j,k)/(b(i,k) - a(i,k)*e(i,k) + eps)
-                g_tracer%field(i,j,k,tau) = (f(i,k) - a(i,k)*g_tracer%field(i,j,k-1,tau))*bet(i)
-             enddo
-          enddo
-
-          ! back substitution
-          do k=g_tracer_com%nk-1,1,-1
-             do i=g_tracer_com%isc,g_tracer_com%iec
-                g_tracer%field(i,j,k,tau) = g_tracer%field(i,j,k,tau) - e(i,k+1)*g_tracer%field(i,j,k+1,tau)
-             enddo
-          enddo
-       enddo
-
-    endif
-
-    !
-    !   Calculate the implicit vertical diffusion term
-    !   (Note: dh = rho_dzt(taup1)
-    !
-
-    if (g_tracer%diag_id_vdiffuse_impl .gt. 0) then
-      do j = g_tracer_com%jsc, g_tracer_com%jec
-         do i = g_tracer_com%isc, g_tracer_com%iec
-            do k = 1, g_tracer_com%nk
-               g_tracer%vdiffuse_impl(i,j,k) = dh(i,j,k) * g_tracer_com%grid_tmask(i,j,k) *   &
-                    (g_tracer%field(i,j,k,tau) - g_tracer%vdiffuse_impl(i,j,k)) / dt
-            enddo
-         enddo
-      enddo
-    endif
-
-    return
-
-  end subroutine g_tracer_vertdiff_M
-
+   !-----------------------------------------------------------------------
+   !> @brief Solves a tridiagonal system of equations using the algorithm from Press et al.
+   !>
+   !> @reference Numerical Recipes in Fortran77: The Art of Scientific Computing, 2nd Edition, 
+   !> by Press, Teukolsky, Vetterling, and Flannery, Cambridge University Press, 
+   !> Section 2.4 Tridiagonal and Diagonal Systems of Equations.
+   !>
+   !> This subroutine solves a tridiagonal linear system of the form:
+   !>   a(i) * u(i-1) + b(i) * u(i) + c(i) * u(i+1) = r(i)
+   !> for i = 1, ..., n, where a, b, c are the sub-diagonal, diagonal, and super-diagonal elements,
+   !> r is the right-hand side, and u is the solution vector.
+   !>
+   !> @param[in]  a Sub-diagonal coefficients (a(1) unused)
+   !> @param[in]  b Diagonal coefficients
+   !> @param[in]  c Super-diagonal coefficients (c(n) unused)
+   !> @param[in]  r Right-hand side vector
+   !> @param[inout] u Solution vector (input ignored, output overwritten)
+   !> @param[in]  n Number of equations
+   !-----------------------------------------------------------------------
+   subroutine tridiag_solver_Press_et_al(a,b,c,r,u,n)
+   integer, intent(in) :: n
+   real,    intent(in) :: a(n),b(n),c(n),r(n)
+   real,    intent(inout) :: u(n)
+   real    :: bet,gam(n)
+   integer :: k
+   ! Solves for a vector u(1:n) of length n the tridiagonal linear set of equations
+   !    a(k)*u(k-1) + b(k)*u(k) + c(k)*u(k+1) = r(k) for k=1,...,n
+   !    a,b,c are input vectors of length n and not modified.
+   bet=b(1)
+   u(1)=r(1)/bet
+   do k=2,n    !Decomposition and forward substitution
+      gam(k)=c(k-1)/bet
+      bet=b(k)-a(k)*gam(k) !If bet is zero, the tridiagonal matrix is singular or nearly so.
+      u(k)=(r(k)-a(k)*u(k-1))/bet
+   enddo
+   do k=n-1,1,-1  !Back substitution
+      u(k)=u(k)-gam(k+1)*u(k+1)
+   enddo
+ end subroutine tridiag_solver_Press_et_al
 
   subroutine g_diag_field_add(node_ptr, diag_id, package_name, name, axes, init_time, longname, units, &
                             missing_value, Z_diag, field_ptr, Zname, Zlongname, Zunits)
@@ -3538,18 +3528,18 @@ contains
     integer, optional, intent(in) :: Z_diag
     CHARACTER(len=*), optional, INTENT(in) :: Zname, Zlongname, Zunits
     real, optional, pointer :: field_ptr(:,:,:)
-    
+
 
     type(g_diag_type), pointer :: g_diag => NULL()
-    
+
     !diag register with the original name
     diag_id = g_register_diag_field(package_name, name, axes, init_time, longname,units, missing_value = missing_value)
 
     !===================================================================
-    !Add this diagnostics to the list that is going to be used later (by GOLD) 
+    !Add this diagnostics to the list that is going to be used later (by GOLD)
     !===================================================================
     allocate(g_diag)
-    
+
     g_diag%diag_id = diag_id
     g_diag%name         = trim(name)
     g_diag%longname     = trim(longname)
@@ -3568,10 +3558,10 @@ contains
 
     !===================================================================
     !Reversed Linked List implementation! Make this new node to be the head of the list.
-    !===================================================================    
+    !===================================================================
 
-    g_diag%next => node_ptr 
-    node_ptr => g_diag 
+    g_diag%next => node_ptr
+    node_ptr => g_diag
   end subroutine g_diag_field_add
 
 
@@ -3592,7 +3582,7 @@ contains
 
     if (verbose >= 5) then
        write(errorstring, '(a)')  ': Dumping generic tracer namelists tree: '
-       call mpp_error(NOTE, trim(sub_name) //  trim(errorstring))    
+       call mpp_error(NOTE, trim(sub_name) //  trim(errorstring))
 
        if (.not. fm_dump_list('/ocean_mod/namelists', recursive = .true.)) then
           call mpp_error(FATAL, trim(sub_name) // ': Problem dumping generic tracer namelists tree')
@@ -3602,42 +3592,42 @@ contains
     num_prog = 0
     num_diag = 0
     write(errorstring, '(a)')  ''
-    !Go through the list of tracers 
+    !Go through the list of tracers
     g_tracer => g_tracer_list !Local pointer. Do not change the input pointer!
-    do  
+    do
        if(g_tracer%prog) then
           num_prog = num_prog +1
        else
           num_diag = num_diag +1
        endif
 
-       !Check that the required source information is set 
-       if(g_tracer%requires_src_info) then 
+       !Check that the required source information is set
+       if(g_tracer%requires_src_info) then
           if(g_tracer%src_file .eq. 'NULL') then
               write(errorstring, '(a)') trim(g_tracer%name)//' : src_file is not set in the field_table'
-              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
           endif
           if(g_tracer%src_var_name .eq. 'NULL') then
               write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_name is not set in the field_table'
-              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
           endif
 
           if(g_tracer%src_var_unit .eq. 'NULL') then
              write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_unit is not set in the field_table'
-             call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+             call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
           elseif(g_tracer%src_var_unit .eq. 'none') then
              g_tracer%src_var_unit_conversion = 1.0
           elseif(g_tracer%src_var_unit .eq. 'ppt') then
              g_tracer%src_var_unit_conversion = 1.0e-12
           elseif(g_tracer%src_var_unit .eq. 'milliliters_per_liter') then
              select case (trim(g_tracer%name))
-             case('o2')  
+             case('o2')
                 g_tracer%src_var_unit_conversion = (1000.0/22391.6)/1035.0
-             case('o2_b')  
+             case('o2_b')
                 g_tracer%src_var_unit_conversion = (1000.0/22391.6)/1035.0
              case default
                 write(errorstring, '(a)') trim(g_tracer%name)//' : cannot determine src_var_unit_conversion'
-                call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+                call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
              end select
           elseif(g_tracer%src_var_unit .eq. 'micromoles_per_liter') then
              select case (trim(g_tracer%name))
@@ -3653,7 +3643,7 @@ contains
                 g_tracer%src_var_unit_conversion = 1.0 / 1035.0e3
              case default
                 write(errorstring, '(a)') trim(g_tracer%name)//' : cannot determine src_var_unit_conversion'
-                call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+                call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
              end select
           elseif(g_tracer%src_var_unit .eq. 'micromoles_per_kg') then
              select case (trim(g_tracer%name))
@@ -3679,32 +3669,40 @@ contains
                 g_tracer%src_var_unit_conversion = 1.0 / 1.0e6
              case('do14c')
                 g_tracer%src_var_unit_conversion = 1.0 / 1.0e6
+             case('no3')
+                g_tracer%src_var_unit_conversion = 1.0 / 1.0e6
+             case('o2')
+                g_tracer%src_var_unit_conversion = 1.0 / 1.0e6
+             case('po4')
+                g_tracer%src_var_unit_conversion = 1.0 / 1.0e6
+             case('sio4')
+                g_tracer%src_var_unit_conversion = 1.0 / 1.0e6
              case default
                 write(errorstring, '(a)') trim(g_tracer%name)//' : cannot determine src_var_unit_conversion'
-                call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+                call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
              end select
-          else 
+          else
               write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_unit is set in the field_table to '//&
                 trim(g_tracer%src_var_unit)//". Cannot determine how to convert this!"
-              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))              
+              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
           endif
 
           if(g_tracer%src_var_record == -1) then
               write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_record is not set in the field_table'
-              call mpp_error(NOTE, trim(sub_name) //': '//  trim(errorstring)) 
+              call mpp_error(NOTE, trim(sub_name) //': '//  trim(errorstring))
           endif
           if(g_tracer%src_var_gridspec .eq. 'NULL') then
               write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_gridspec is not set in the field_table'
-              call mpp_error(NOTE, trim(sub_name) //': '//  trim(errorstring)) 
+              call mpp_error(NOTE, trim(sub_name) //': '//  trim(errorstring))
           endif
 
           if(g_tracer%src_var_valid_min == -99.0 ) then
               write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_valid_min is not set in the field_table'
-              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
           endif
 !          if(g_tracer%src_var_valid_max == -99.0 ) then
 !              write(errorstring, '(a)') trim(g_tracer%name)//' : src_var_valid_max is not set in the field_table'
-!              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring)) 
+!              call mpp_error(FATAL, trim(sub_name) //': '//  trim(errorstring))
 !          endif
 
 
@@ -3715,17 +3713,11 @@ contains
        g_tracer => g_tracer%next
     enddo
 
-    if(errorstring .ne. '') then
-       !The following cannot be FATAL for backward compatibility with MOM5 and GOLD
-       call mpp_error(WARNING, trim(sub_name) // ' : there are tracers with required source properties that are not set '//&
-                      'in the field_table. Grep the stdout for NOTEs from g_tracer_print_info and correct the field_table!')
-    endif
-
     if (verbose >= 3) then
        write(errorstring, '(a,i4)')  ': Number of prognostic generic tracers = ',num_prog
-       call mpp_error(NOTE, trim(sub_name) //  trim(errorstring))    
+       call mpp_error(NOTE, trim(sub_name) //  trim(errorstring))
        write(errorstring, '(a,i4)')  ': Number of diagnostic generic tracers = ',num_diag
-       call mpp_error(NOTE, trim(sub_name) //  trim(errorstring))     
+       call mpp_error(NOTE, trim(sub_name) //  trim(errorstring))
     endif
 
   end subroutine g_tracer_print_info
@@ -3758,6 +3750,30 @@ contains
     src_var_valid_max = g_tracer%src_var_valid_max
 
   end subroutine g_tracer_get_src_info
+
+  subroutine g_tracer_get_obc_segment_props(g_tracer_list, name, obc_has, src_file, src_var_name,lfac_in,lfac_out)
+    type(g_tracer_type),      pointer    :: g_tracer_list,g_tracer
+    character(len=*),         intent(in) :: name
+    logical,                  intent(out):: obc_has                !<.true. if This tracer has OBC
+    character(len=*),optional,intent(out):: src_file, src_var_name !<OBC source file and variable in file
+    real,            optional,intent(out):: lfac_in,lfac_out       !<OBC reservoir inverse lengthscale factor
+    character(len=fm_string_len), parameter :: sub_name = 'g_tracer_get_obc_segment_props'
+
+    if(.NOT. associated(g_tracer_list)) call mpp_error(FATAL, trim(sub_name)//&
+         ": No tracer in the list.")
+
+    g_tracer => g_tracer_list !Local pointer. Do not change the input pointer!
+    !Find the node which has name=name
+    call g_tracer_find(g_tracer,name)
+    if(.NOT. associated(g_tracer)) call mpp_error(FATAL, trim(sub_name)//&
+         ": No tracer in the list with name="//trim(name))
+
+    obc_has = g_tracer%obc_has
+    if(present(src_file))     src_file = g_tracer%obc_src_file_name
+    if(present(src_var_name)) src_var_name = g_tracer%obc_src_field_name
+    if(present(lfac_in))      lfac_in  = g_tracer%obc_lfac_in
+    if(present(lfac_out))     lfac_out = g_tracer%obc_lfac_out
+  end subroutine g_tracer_get_obc_segment_props
 
   function g_register_diag_field(module_name, field_name, axes, init_time,         &
        long_name, units, missing_value, range, mask_variant, standard_name,      &
@@ -3796,9 +3812,9 @@ contains
     character(len=fm_string_len), parameter :: sub_name = 'g_register_diag_field'
 
 #ifdef _USE_MOM6_DIAG
-    type(g_diag_ctrl), pointer :: diag_CS_ptr 
+    type(g_diag_ctrl), pointer :: diag_CS_ptr
     real :: MOM_missing_value
-    
+
     if(present(diag_CS)) then
        diag_CS_ptr => diag_CS
     else
@@ -3838,7 +3854,7 @@ contains
        verbose, do_not_log, err_msg, interp_method, tile_count)
     endif
 
-#endif    
+#endif
 
   end function g_register_diag_field
 
@@ -3850,15 +3866,18 @@ contains
     type(g_diag_ctrl),optional, pointer :: diag_CS
 
 #ifdef _USE_MOM6_DIAG
-    type(g_diag_ctrl), pointer :: diag_CS_ptr 
-    
-    if(present(diag_CS)) then
-       diag_CS_ptr => diag_CS
+    type(g_diag_ctrl), pointer :: diag_CS_ptr
+    if(diag_field_id .gt. 0) then
+      if(present(diag_CS)) then
+        diag_CS_ptr => diag_CS
+      else
+        call g_tracer_get_diagCS(diag_CS_ptr)
+      endif
+      call post_data_MOM(diag_field_id, field, diag_CS_ptr)
+      g_send_data_0d = .TRUE.
     else
-       call g_tracer_get_diagCS(diag_CS_ptr)
+      g_send_data_0d = .FALSE.
     endif
-    call post_data_MOM(diag_field_id, field, diag_CS_ptr) 
-    g_send_data_0d = .TRUE.
 #else
     g_send_data_0d = send_data_FMS(diag_field_id, field, time, err_msg)
 #endif
@@ -3877,15 +3896,18 @@ contains
     type(g_diag_ctrl),optional, pointer :: diag_CS
 
 #ifdef _USE_MOM6_DIAG
-    type(g_diag_ctrl), pointer :: diag_CS_ptr 
-    
-    if(present(diag_CS)) then
-       diag_CS_ptr => diag_CS
+    type(g_diag_ctrl), pointer :: diag_CS_ptr
+    if(diag_field_id .gt. 0) then
+      if(present(diag_CS)) then
+        diag_CS_ptr => diag_CS
+      else
+        call g_tracer_get_diagCS(diag_CS_ptr)
+      endif
+      call post_data_MOM(diag_field_id, field, diag_CS_ptr)
+      g_send_data_1d = .TRUE.
     else
-       call g_tracer_get_diagCS(diag_CS_ptr)
+      g_send_data_1d = .FALSE.
     endif
-    call post_data_1d_k(diag_field_id, field, diag_CS_ptr)     
-    g_send_data_1d = .TRUE.
 #else
     g_send_data_1d = send_data_FMS(diag_field_id, field, time, is_in, mask, rmask, ie_in, weight, err_msg)
 #endif
@@ -3905,15 +3927,18 @@ contains
     type(g_diag_ctrl),optional, pointer :: diag_CS
 
 #ifdef _USE_MOM6_DIAG
-    type(g_diag_ctrl), pointer :: diag_CS_ptr 
-    
-    if(present(diag_CS)) then
-       diag_CS_ptr => diag_CS
+    type(g_diag_ctrl), pointer :: diag_CS_ptr
+    if(diag_field_id .gt. 0) then
+      if(present(diag_CS)) then
+        diag_CS_ptr => diag_CS
+      else
+        call g_tracer_get_diagCS(diag_CS_ptr)
+      endif
+      call post_data_MOM(diag_field_id, field, diag_CS_ptr)!, mask=rmask)
+      g_send_data_2d = .TRUE.
     else
-       call g_tracer_get_diagCS(diag_CS_ptr)
+      g_send_data_2d = .FALSE.
     endif
-    call post_data_MOM(diag_field_id, field, diag_CS_ptr)!, mask=rmask)         
-    g_send_data_2d = .TRUE.
 #else
     g_send_data_2d = send_data_FMS(diag_field_id, field, time, is_in, js_in, &
        & mask, rmask, ie_in, je_in, weight, err_msg)
@@ -3934,15 +3959,18 @@ contains
     type(g_diag_ctrl),optional, pointer :: diag_CS
 
 #ifdef _USE_MOM6_DIAG
-    type(g_diag_ctrl), pointer :: diag_CS_ptr 
-    
-    if(present(diag_CS)) then
-       diag_CS_ptr => diag_CS
+    type(g_diag_ctrl), pointer :: diag_CS_ptr
+    if(diag_field_id .gt. 0) then
+      if(present(diag_CS)) then
+        diag_CS_ptr => diag_CS
+      else
+        call g_tracer_get_diagCS(diag_CS_ptr)
+      endif
+      call post_data_MOM(diag_field_id, field, diag_CS_ptr)!, mask=rmask)
+      g_send_data_3d = .TRUE.
     else
-       call g_tracer_get_diagCS(diag_CS_ptr)
+      g_send_data_3d = .FALSE.
     endif
-    call post_data_MOM(diag_field_id, field, diag_CS_ptr)!, mask=rmask) 
-    g_send_data_3d = .TRUE.
 #else
     g_send_data_3d = send_data_FMS(diag_field_id, field, time, is_in, js_in, ks_in, &
              & mask, rmask, ie_in, je_in, ke_in, weight, err_msg)
@@ -3950,5 +3978,13 @@ contains
 
   END FUNCTION g_send_data_3d
 
+ !> This returns .true. if the current PE is the root PE.
+function is_root_pe()
+  ! This returns .true. if the current PE is the root PE.
+  logical :: is_root_pe
+  is_root_pe = .false.
+  if (mpp_pe() == mpp_root_pe()) is_root_pe = .true.
+  return
+end function is_root_pe
 
 end module g_tracer_utils

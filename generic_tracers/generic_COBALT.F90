@@ -127,7 +127,8 @@
 module generic_COBALT
 
   use coupler_types_mod, only: coupler_2d_bc_type
-  use field_manager_mod, only: fm_string_len, fm_path_name_len
+  ! MOM6COMPAT: fm_path_name_len (unused) was removed from FMS field_manager_mod
+  use field_manager_mod, only: fm_string_len
   use mpp_mod,           only: mpp_clock_id, mpp_clock_begin, mpp_clock_end
   use mpp_mod,           only: CLOCK_COMPONENT, CLOCK_SUBCOMPONENT, CLOCK_MODULE
   use mpp_mod,           only: input_nml_file, mpp_error, stdlog, NOTE, WARNING, FATAL, stdout, mpp_chksum
@@ -136,7 +137,8 @@ module generic_COBALT
   use constants_mod,     only: WTMCO2, WTMO2,WTMN,rdgas,wtmair
   use data_override_mod, only: data_override
   use fms_mod,           only: write_version_number, FATAL, WARNING, stdout, stdlog,mpp_pe,mpp_root_pe
-  use fms_mod,           only: open_namelist_file, check_nml_error, close_file
+! MOM6COMPAT: open_namelist_file/close_file no longer exist in FMS (only used without INTERNAL_FILE_NML)
+  use fms_mod,           only: check_nml_error
 
   use g_tracer_utils, only : g_tracer_type,g_tracer_start_param_list,g_tracer_end_param_list
   use g_tracer_utils, only : g_tracer_add,g_tracer_add_param, g_tracer_set_files
@@ -168,6 +170,13 @@ module generic_COBALT
   public generic_COBALT_update_from_bottom
   public generic_COBALT_set_boundary_values
   public generic_COBALT_end
+  public as_param_cobalt
+
+  ! MOM6COMPAT: modern generic_tracer.F90 sets as_param_cobalt from generic_tracer_nml
+  ! as_param. GZ-COBALT v6.23 predates that switch and hardcodes its own air-sea gas
+  ! exchange (air_sea_gas_flux_generic, 9.36e-07, OCMIP2/ESM4 Schmidt numbers), so the
+  ! value is accepted and IGNORED here.
+  character(len=10), save :: as_param_cobalt = ''
 
   !The following logical for using this module is overwritten
   logical, save :: do_generic_COBALT = .false.
@@ -200,6 +209,11 @@ module generic_COBALT
   real    :: gamma_nitrif= 3.5e6 !month(-1)
   real    :: k_nh3_nitrif= 3.1e-9 !mol/kg
 
+  ! MOM6COMPAT: the per-step conservation checks were hardcoded at 1.0e-10 (umol/kg/day).
+  ! That limit scales with 86400/dt, so at dt = 900 s plain double-precision roundoff in
+  ! DIC (~3 ulp) trips it. Same fix as upstream COBALTv3: a namelist tolerance whose
+  ! default keeps the original 1.0e-10.
+  real    :: imbalance_tolerance = 1.0e-10
   integer :: scheme_no3_nh4_lim = 2 !1-Frost and Franzen (1992)
                                     !2-O'Neill
 
@@ -210,7 +224,7 @@ module generic_COBALT
 namelist /generic_COBALT_nml/ do_14c, co2_calc, debug, do_nh3_atm_ocean_exchange, scheme_nitrif, &
      k_nh4_small,k_nh4_large,k_nh4_diazo,scheme_no3_nh4_lim,k_no3_small,k_no3_large,k_no3_diazo, &
      o2_min_nit,k_o2_nit,irr_inhibit,k_nh3_nitrif, &
-     gamma_nitrif
+     gamma_nitrif, imbalance_tolerance
 
   ! Declare phytoplankton, zooplankton and cobalt variable types, which contain
   ! the vast majority of all variables used in this module.
@@ -6775,11 +6789,14 @@ write (stdlogunit, generic_COBALT_nml)
   !  </IN>
   !
   ! </SUBROUTINE>
-  subroutine generic_COBALT_update_from_bottom(tracer_list, dt, tau, model_time)
+  ! MOM6COMPAT: Temp..jlb added (unused) to match the generic_tracer.F90 call.
+  subroutine generic_COBALT_update_from_bottom(tracer_list, dt, tau, model_time, Temp, Salt, rho_dzt, dzt, ilb, jlb)
     type(g_tracer_type), pointer :: tracer_list
     real,               intent(in) :: dt
     integer,            intent(in) :: tau
     type(time_type),    intent(in) :: model_time
+    real, dimension(ilb:,jlb:,:),   intent(in) :: Temp, Salt, rho_dzt, dzt
+    integer,                        intent(in) :: ilb, jlb
     integer :: isc,iec, jsc,jec,isd,ied,jsd,jed,nk,ntau
     logical :: used
     real, dimension(:,:,:),pointer :: grid_tmask
@@ -6919,7 +6936,10 @@ write (stdlogunit, generic_COBALT_nml)
   !  </IN>
   ! </SUBROUTINE>
   subroutine generic_COBALT_update_from_source(tracer_list,Temp,Salt,rho_dzt,dzt,hblt_depth,&
-       ilb,jlb,tau,dt,grid_dat,model_time,nbands,max_wavelength_band,sw_pen_band,opacity_band,internal_heat,frunoff)
+       ilb,jlb,tau,dt,grid_dat,model_time,nbands,max_wavelength_band,sw_pen_band,opacity_band,internal_heat,frunoff, &
+       geolat, photo_acc_dpth)
+  ! MOM6COMPAT: geolat, photo_acc_dpth added (unused) to match the generic_tracer.F90 call;
+  ! internal_heat made optional as in upstream ocean_BGC (NULL unless DO_GEOTHERMAL).
 
     type(g_tracer_type),            pointer    :: tracer_list
     real, dimension(ilb:,jlb:,:),   intent(in) :: Temp,Salt,rho_dzt,dzt
@@ -6933,8 +6953,10 @@ write (stdlogunit, generic_COBALT_nml)
     real, dimension(:),             intent(in) :: max_wavelength_band
     real, dimension(:,ilb:,jlb:),   intent(in) :: sw_pen_band
     real, dimension(:,ilb:,jlb:,:), intent(in) :: opacity_band
-    real, dimension(ilb:,jlb:),     intent(in) :: internal_heat
+    real, dimension(ilb:,jlb:),     intent(in), optional :: internal_heat
     real, dimension(ilb:,jlb:),     intent(in) :: frunoff
+    real, dimension(ilb:,jlb:),     intent(in) :: geolat
+    real, dimension(ilb:,jlb:), optional, intent(in) :: photo_acc_dpth
 
     character(len=fm_string_len), parameter :: sub_name = 'generic_COBALT_update_from_source'
     integer :: isc,iec, jsc,jec,isd,ied,jsd,jed,nk,ntau, i, j, k , kblt, m, n, k_100, k_200, kbot
@@ -8536,7 +8558,12 @@ write (stdlogunit, generic_COBALT_nml)
           cobalt%ffe_sed(i,j) = cobalt%ffe_sed_max * tanh( (cobalt%f_ndet_btf(i,j,1)*cobalt%c_2_n*sperd*1.0e3)/ &
                                 max(cobalt%f_o2(i,j,k)*1.0e6,epsln) )
 
-          cobalt%ffe_geotherm(i,j) = cobalt%ffe_geotherm_ratio*internal_heat(i,j)*4184.0/dt
+          ! MOM6COMPAT: as upstream ocean_BGC, zero when geothermal heating is disabled.
+          if(present(internal_heat)) then
+              cobalt%ffe_geotherm(i,j) = cobalt%ffe_geotherm_ratio*internal_heat(i,j)*4184.0/dt
+          else
+              cobalt%ffe_geotherm(i,j) = 0.0
+          endif
           ! default for icebergs: 40 nanomoles fe dissolved per kg of icemelt
           ! sediments: Raiswell et al., 2008: 0.5 kg sed per m-3 of iceberg; 0.1% mean Fe, 5-10% soluble
           ! ~500 nanomoles Fe per kg-1 icemelt
@@ -9185,7 +9212,7 @@ write (stdlogunit, generic_COBALT_nml)
                     cobalt%p_nlgz(i,j,k,tau) + cobalt%p_nsmt(i,j,k,tau) + &
                     cobalt%p_nlgt(i,j,k,tau))*grid_tmask(i,j,k)
          imbal = (post_totn(i,j,k) - pre_totn(i,j,k) - net_srcn(i,j,k))*86400.0/dt*1.03e6
-         if (abs(imbal).gt.1.0e-10) then
+         if (abs(imbal).gt.imbalance_tolerance) then
            call mpp_error(FATAL,&
            '==>biological source/sink imbalance (generic_COBALT_update_from_source): Nitrogen')
          endif
@@ -9200,7 +9227,7 @@ write (stdlogunit, generic_COBALT_nml)
                     cobalt%p_nlgz(i,j,k,tau) + cobalt%p_nsmt(i,j,k,tau) + &
                     cobalt%p_nlgt(i,j,k,tau)))*grid_tmask(i,j,k)
         imbal = (post_totc(i,j,k) - pre_totc(i,j,k))*86400.0/dt*1.03e6
-         if (abs(imbal).gt.1.0e-10) then
+         if (abs(imbal).gt.imbalance_tolerance) then
            call mpp_error(FATAL,&
            '==>biological source/sink imbalance (generic_COBALT_update_from_source): Carbon')
          endif
@@ -9217,7 +9244,7 @@ write (stdlogunit, generic_COBALT_nml)
                     cobalt%p_nlgt(i,j,k,tau)*zoo(5)%q_p_2_n + &
                     bact(1)%q_p_2_n*cobalt%p_nbact(i,j,k,tau))*grid_tmask(i,j,k)
          imbal = (post_totp(i,j,k) - pre_totp(i,j,k))*86400.0/dt*1.03e6
-         if (abs(imbal).gt.1.0e-10) then
+         if (abs(imbal).gt.imbalance_tolerance) then
            call mpp_error(FATAL,&
            '==>biological source/sink imbalance (generic_COBALT_update_from_source): Phosphorus')
          endif
@@ -9226,7 +9253,7 @@ write (stdlogunit, generic_COBALT_nml)
                     cobalt%p_felg(i,j,k,tau) + cobalt%p_fesm(i,j,k,tau) + &
                     cobalt%p_fedet(i,j,k,tau))*grid_tmask(i,j,k)
          imbal = (post_totfe(i,j,k) - pre_totfe(i,j,k) - net_srcfe(i,j,k))*86400.0/dt*1.03e6
-         if (abs(imbal).gt.1.0e-10) then
+         if (abs(imbal).gt.imbalance_tolerance) then
            call mpp_error(FATAL,&
            '==>biological source/sink imbalance (generic_COBALT_update_from_source): Iron')
          endif
@@ -9234,7 +9261,7 @@ write (stdlogunit, generic_COBALT_nml)
          post_totsi(i,j,k) = (cobalt%p_sio4(i,j,k,tau) + cobalt%p_silg(i,j,k,tau) + &
                     cobalt%p_sidet(i,j,k,tau))*grid_tmask(i,j,k)
          imbal = (post_totsi(i,j,k) - pre_totsi(i,j,k))*86400.0/dt*1.03e6
-         if (abs(imbal).gt.1.0e-10) then
+         if (abs(imbal).gt.imbalance_tolerance) then
            call mpp_error(FATAL,&
            '==>biological source/sink imbalance (generic_COBALT_update_from_source): Silica')
          endif

@@ -156,13 +156,6 @@
 ! experimental at this point. Requires that do_carbon=.true.
 !  </DATA> 
 !
-!  <DATA NAME="co2_calc" TYPE="character">
-!  Defines the carbon equiliabration method.  Default is 'ocmip2' which uses
-! the FMS_ocmip2_co2calc routine.  The other option is 'mocsy', which uses
-! the set of routines authored by J. Orr. See reference at: 
-! http://ocmip5.ipsl.jussieu.fr/mocsy/index.html
-!  </DATA> 
-!
 !</NAMELIST>
 !
 !----------------------------------------------------------------
@@ -170,13 +163,14 @@
 module generic_BLING
 
   use coupler_types_mod, only: coupler_2d_bc_type
-  use field_manager_mod, only: fm_string_len, fm_path_name_len
+  use field_manager_mod, only: fm_string_len
   use mpp_mod,           only: input_nml_file, mpp_error, stdlog, NOTE, WARNING, FATAL, stdout, mpp_chksum
-  use fms_mod,           only: write_version_number, open_namelist_file, check_nml_error, close_file
-  use fms_mod,           only: field_exist, file_exist
+  use fms_mod,           only: write_version_number, check_nml_error
   use time_manager_mod,  only: time_type
   use fm_util_mod,       only: fm_util_start_namelist, fm_util_end_namelist  
   use constants_mod,     only: WTMCO2, WTMO2
+  use fms_mod,           only: stdout, stdlog,mpp_pe,mpp_root_pe
+  use data_override_mod, only: data_override
 
   use g_tracer_utils, only : g_diag_type,g_tracer_type
   use g_tracer_utils, only : g_tracer_start_param_list,g_tracer_end_param_list
@@ -186,9 +180,9 @@ module generic_BLING
   use g_tracer_utils, only : g_tracer_coupler_set,g_tracer_coupler_get
   use g_tracer_utils, only : g_tracer_send_diag, g_tracer_get_values  
   use g_tracer_utils, only : register_diag_field=>g_register_diag_field
-  use g_tracer_utils, only : g_send_data
+  use g_tracer_utils, only : g_send_data, is_root_pe
 
-  use FMS_ocmip2_co2calc_mod, only : FMS_ocmip2_co2calc, CO2_dope_vector
+  use FMS_co2calc_mod, only : FMS_co2calc, CO2_dope_vector
 
   implicit none ; private
 
@@ -207,10 +201,12 @@ module generic_BLING
   public generic_BLING_update_from_bottom
   public generic_BLING_set_boundary_values
   public generic_BLING_end
+  public as_param_bling
 
-  !The following logical for using this module is overwritten 
-  ! generic_tracer_nml namelist
+  !The following variables for using this module 
+  ! are overwritten by generic_tracer_nml namelist
   logical, save :: do_generic_BLING = .false.
+  character(len=10), save :: as_param_bling = 'gfdl_cmip6'
 
   real, parameter :: sperd = 24.0 * 3600.0
   real, parameter :: spery = 365.25 * sperd
@@ -219,7 +215,7 @@ module generic_BLING
 
 ! Namelist Options
 
-  character(len=10) ::  co2_calc = 'ocmip2'  ! other option is 'mocsy'
+  character(len=10) ::  co2_calc = 'mocsy'! default is 'mocsy'
   logical :: do_14c             = .true.  ! Requires do_carbon = .true.
   logical :: do_carbon          = .true.  
   logical :: do_carbon_pre      = .true.  ! Requires do_carbon = .true.
@@ -309,7 +305,8 @@ namelist /generic_bling_nml/ co2_calc, do_14c, do_carbon, do_carbon_pre, &
 
      real    :: htotal_scale_lo, htotal_scale_hi, htotal_in
      real    :: Rho_0, a_0, a_1, a_2, a_3, a_4, a_5, b_0, b_1, b_2, b_3, c_0
-     real    :: a1_co2, a2_co2, a3_co2, a4_co2, a1_o2, a2_o2, a3_o2, a4_o2
+     real    :: a1_co2, a2_co2, a3_co2, a4_co2, a5_co2 
+     real    :: a1_o2, a2_o2, a3_o2,  a4_o2,  a5_o2
 
 !
 ! The prefixes "f_" refers to a "field" and "j" to a volumetric rate, and 
@@ -771,23 +768,14 @@ character(len=256), parameter   :: note_header =                                
 !
 stdoutunit=stdout();stdlogunit=stdlog()
 
-#ifdef INTERNAL_FILE_NML
 read (input_nml_file, nml=generic_bling_nml, iostat=io_status)
 ierr = check_nml_error(io_status,'generic_bling_nml')
-#else
-ioun = open_namelist_file()
-read  (ioun, generic_bling_nml,iostat=io_status)
-ierr = check_nml_error(io_status,'generic_bling_nml')
-call close_file (ioun)
-#endif
 
 write (stdoutunit,'(/)')
 write (stdoutunit, generic_bling_nml)
 write (stdlogunit, generic_bling_nml)
- 
-  if (trim(co2_calc) == 'ocmip2') then
-    write (stdoutunit,*) trim(note_header), 'Using FMS OCMIP2 CO2 routine'
-  else if (trim(co2_calc) == 'mocsy') then
+
+  if (trim(co2_calc) == 'mocsy') then
     write (stdoutunit,*) trim(note_header), 'Using Mocsy CO2 routine'
   else
     call mpp_error(FATAL,"Unknown co2_calc option specified in generic_BLING_nml")
@@ -1857,29 +1845,50 @@ write (stdlogunit, generic_bling_nml)
     call g_tracer_add_param('b_2', bling%b_2, -1.03410e-02 )
     call g_tracer_add_param('b_3', bling%b_3, -8.17083e-03)
     call g_tracer_add_param('c_0', bling%c_0, -4.88682e-07)
+    !
     !-----------------------------------------------------------------------
-    !     Schmidt number coefficients
+    !      Schmidt number coefficients
     !-----------------------------------------------------------------------
-    !  Compute the Schmidt number of CO2 in seawater using the 
-    !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
-    !  7373-7382).
-    !-----------------------------------------------------------------------
-    !New Wanninkhof numbers
-    call g_tracer_add_param('a1_co2', bling%a1_co2,  2068.9)
-    call g_tracer_add_param('a2_co2', bling%a2_co2, -118.63)
-    call g_tracer_add_param('a3_co2', bling%a3_co2,  2.9311)
-    call g_tracer_add_param('a4_co2', bling%a4_co2, -0.027)
+    if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
+        !  Compute the Schmidt number of CO2 in seawater using the 
+        !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
+        !  7373-7382).
+        call g_tracer_add_param('a1_co2', bling%a1_co2,  2068.9)
+        call g_tracer_add_param('a2_co2', bling%a2_co2, -118.63)
+        call g_tracer_add_param('a3_co2', bling%a3_co2,  2.9311)
+        call g_tracer_add_param('a4_co2', bling%a4_co2, -0.027)
+        call g_tracer_add_param('a5_co2', bling%a5_co2,  0.0)     ! Not used for W92
+        !  Compute the Schmidt number of O2 in seawater using the 
+        !  formulation proposed by Keeling et al. (1998, Global Biogeochem.
+        !  Cycles, 12, 141-163).
+        call g_tracer_add_param('a1_o2', bling%a1_o2, 1929.7)
+        call g_tracer_add_param('a2_o2', bling%a2_o2, -117.46)
+        call g_tracer_add_param('a3_o2', bling%a3_o2, 3.116)
+        call g_tracer_add_param('a4_o2', bling%a4_o2, -0.0306)
+        call g_tracer_add_param('a5_o2', bling%a5_o2, 0.0)       ! Not used for W92
+        if (is_root_pe()) call mpp_error(NOTE,'generic_bling: Using Schmidt number coefficients for W92')
+    else if (trim(as_param_bling) == 'W14') then
+        !  Compute the Schmidt number of CO2 in seawater using the 
+        !  formulation presented by Wanninkhof 
+        !  (2014, Limnol. Oceanogr., 12, 351-362)
+        call g_tracer_add_param('a1_co2', bling%a1_co2,    2116.8)
+        call g_tracer_add_param('a2_co2', bling%a2_co2,   -136.25)
+        call g_tracer_add_param('a3_co2', bling%a3_co2,    4.7353)
+        call g_tracer_add_param('a4_co2', bling%a4_co2, -0.092307)
+        call g_tracer_add_param('a5_co2', bling%a5_co2, 0.0007555)
+        !  Compute the Schmidt number of O2 in seawater using the 
+        !  formulation presented by Wanninkhof 
+        !  (2014, Limnol. Oceanogr., 12, 351-362)
+        call g_tracer_add_param('a1_o2', bling%a1_o2, 1920.4)
+        call g_tracer_add_param('a2_o2', bling%a2_o2, -135.6)
+        call g_tracer_add_param('a3_o2', bling%a3_o2, 5.2122)
+        call g_tracer_add_param('a4_o2', bling%a4_o2, -0.10939)
+        call g_tracer_add_param('a5_o2', bling%a5_o2, 0.00093777)
+        if (is_root_pe()) call mpp_error(NOTE,'generic_bling: Using Schmidt number coefficients for W14')
+    else
+        call mpp_error(FATAL,'generic_BLING: unable to set Schmidt number coefficients for as_param '//trim(as_param_bling))
+    endif
     !---------------------------------------------------------------------
-    !  Compute the Schmidt number of O2 in seawater using the 
-    !  formulation proposed by Keeling et al. (1998, Global Biogeochem.
-    !  Cycles, 12, 141-163).
-    !---------------------------------------------------------------------
-    !New Wanninkhof numbers
-    call g_tracer_add_param('a1_o2', bling%a1_o2, 1929.7)
-    call g_tracer_add_param('a2_o2', bling%a2_o2, -117.46)
-    call g_tracer_add_param('a3_o2', bling%a3_o2, 3.116)
-    call g_tracer_add_param('a4_o2', bling%a4_o2, -0.0306)
-
     call g_tracer_add_param('htotal_scale_lo', bling%htotal_scale_lo, 0.01)
     call g_tracer_add_param('htotal_scale_hi', bling%htotal_scale_hi, 100.0)
 
@@ -2206,7 +2215,17 @@ write (stdlogunit, generic_bling_nml)
   subroutine user_add_tracers(tracer_list)
     type(g_tracer_type), pointer :: tracer_list
     character(len=fm_string_len), parameter :: sub_name = 'user_add_tracers'
+    real :: as_coeff_bling
 
+    if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
+      ! Air-sea gas exchange coefficient presented in OCMIP2 protocol.
+      ! Value is 0.337 cm/hr in units of m/s.
+      as_coeff_bling=9.36e-7
+    else
+      ! Value is 0.251 cm/hr in units of m/s
+      as_coeff_bling=6.972e-7
+    endif
+    !-----------------------------------------------------------------------
     !Add here only the parameters that are required at the time of registeration 
     !(to make flux exchanging Ocean tracers known for all PE's) 
     !
@@ -2281,7 +2300,7 @@ write (stdlogunit, generic_bling_nml)
          flux_gas_name  = 'o2_flux',                                &
          flux_gas_type  = 'air_sea_gas_flux_generic',               &
          flux_gas_molwt = WTMO2,                                    &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),               &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),         &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc' )
 
     !
@@ -2355,21 +2374,21 @@ write (stdlogunit, generic_bling_nml)
       !
       !       DIC (Dissolved inorganic carbon)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-         name       = 'dic',                         &
-         longname   = 'Dissolved Inorganic Carbon',  &
-         units      = 'mol/kg',                      &
-         prog       = .true.,                        &
-         flux_gas       = .true.,                    &
-         flux_gas_name  = 'co2_flux',                &
-         flux_gas_type  = 'air_sea_gas_flux_generic',&
-         flux_gas_molwt = WTMCO2,                    &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),&
+      call g_tracer_add(tracer_list,package_name,                   &
+         name           = 'dic',                                    &
+         longname       = 'Dissolved Inorganic Carbon',             &
+         units          = 'mol/kg',                                 &
+         prog           = .true.,                                   &
+         flux_gas       = .true.,                                   &
+         flux_gas_name  = 'co2_flux',                               &
+         flux_gas_type  = 'air_sea_gas_flux_generic',               &
+         flux_gas_molwt = WTMCO2,                                   &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),         &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-         flux_runoff    = .true.,                    &
-         flux_param     = (/12.011e-03  /),          &
-         flux_bottom    = .true.,                    &
-         init_value     = 0.001)
+         flux_runoff    = .true.,                                   &
+         flux_param     = (/12.011e-03  /),                         &
+         flux_bottom    = .true.,                                   &
+         init_value     = 0.001                                      )
       !
       !    Cased (CaCO3 concentration in active sediment layer)   
       !
@@ -2393,21 +2412,21 @@ write (stdlogunit, generic_bling_nml)
       !
       !       DIC (Dissolved inorganic carbon)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-         name       = 'dic',                         &
-         longname   = 'Dissolved Inorganic Carbon',  &
-         units      = 'mol/kg',                      &
-         prog       = .true.,                        &
-         flux_gas       = .true.,                    &
-         flux_gas_name  = 'co2_flux',                &
-         flux_gas_type  = 'air_sea_gas_flux_generic',&
-         flux_gas_molwt = WTMCO2,                    &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),&
+      call g_tracer_add(tracer_list,package_name,           &
+         name           = 'dic',                            &
+         longname       = 'Dissolved Inorganic Carbon',     &
+         units          = 'mol/kg',                         &
+         prog           = .true.,                           &
+         flux_gas       = .true.,                           &
+         flux_gas_name  = 'co2_flux',                       &
+         flux_gas_type  = 'air_sea_gas_flux_generic',       &
+         flux_gas_molwt = WTMCO2,                           &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /), &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-         flux_runoff    = .false.,                   &
-         flux_param     = (/12.011e-03  /),          &
-         flux_bottom    = .true.,                    &
-         init_value     = 0.001)
+         flux_runoff    = .false.,                          &
+         flux_param     = (/12.011e-03  /),                 &
+         flux_bottom    = .true.,                           &
+         init_value     = 0.001                              )
       endif                                                    !BURY CACO3>>
     !     
     !Diagnostic Tracers:
@@ -2448,19 +2467,19 @@ write (stdlogunit, generic_bling_nml)
       !   
       !       DIC_sat (Saturation Dissolved inorganic carbon)
       !
-      call g_tracer_add(tracer_list,package_name,    &
-           name       = 'dic_sat',                   &
-           longname   = 'Saturation Dissolved Inorganic Carbon', &
-           units      = 'mol/kg',                    &
-           prog       = .true.,                      &
-           flux_gas       = .true.,                  &
-           flux_gas_name  = 'co2_sat_flux',          &
-           flux_gas_type  = 'air_sea_gas_flux',      &
-           flux_gas_molwt = WTMCO2,                  &
-           flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),&
+      call g_tracer_add(tracer_list,package_name,                     &
+           name           = 'dic_sat',                                &
+           longname       = 'Saturation Dissolved Inorganic Carbon',  &
+           units          = 'mol/kg',                                 &
+           prog           = .true.,                                   &
+           flux_gas       = .true.,                                   &
+           flux_gas_name  = 'co2_sat_flux',                           &
+           flux_gas_type  = 'air_sea_gas_flux',                       &
+           flux_gas_molwt = WTMCO2,                                   &
+           flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /),         &
            flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-           flux_param     = (/12.011e-03  /),        &
-           init_value     = 0.001)
+           flux_param     = (/12.011e-03  /),                         &
+           init_value     = 0.001                                      )
       !
       !Diagnostic tracers
       !
@@ -2478,20 +2497,20 @@ write (stdlogunit, generic_bling_nml)
       if (do_14c) then                                        !<<RADIOCARBON
       !       D14IC (Dissolved inorganic radiocarbon)
       !
-      call g_tracer_add(tracer_list,package_name,       &
-         name       = 'di14c',                          &
-         longname   = 'Dissolved Inorganic Radiocarbon',&
-         units      = 'mol/kg',                         &
-         prog       = .true.,                           &
-         flux_gas       = .true.,                       &
-         flux_gas_name  = 'c14o2_flux',                 &
-         flux_gas_type  = 'air_sea_gas_flux',           &
-         flux_gas_molwt = WTMCO2,                       &
-         flux_gas_param = (/ 9.36e-07, 9.7561e-06 /),   &
+      call g_tracer_add(tracer_list,package_name,           &
+         name       = 'di14c',                              &
+         longname   = 'Dissolved Inorganic Radiocarbon',    &
+         units      = 'mol/kg',                             &
+         prog       = .true.,                               &
+         flux_gas       = .true.,                           &
+         flux_gas_name  = 'c14o2_flux',                     &
+         flux_gas_type  = 'air_sea_gas_flux',               &
+         flux_gas_molwt = WTMCO2,                           &
+         flux_gas_param = (/ as_coeff_bling, 9.7561e-06 /), &
          flux_gas_restart_file  = 'ocean_bling_airsea_flux.res.nc', &
-         flux_param     = (/14.e-03  /),                &
-         flux_bottom    = .true.,                       &
-         init_value     = 0.001)
+         flux_param     = (/14.e-03  /),                    &
+         flux_bottom    = .true.,                           &
+         init_value     = 0.001                              )
       !
       !       DO14C (Dissolved organic radiocarbon)
       !
@@ -2664,7 +2683,7 @@ write (stdlogunit, generic_bling_nml)
   ! before being sent to the coupler.
   !
   ! For CO2 and 14CO2, the carbon solubility and speciation are calculated by the
-  ! subroutine co2calc, following the OCMIP2 protocol. These calculations are both made
+  ! subroutine co2calc. These calculations are both made
   ! using total CO2, following which the surface CO2 concentration (CO2*, also known as
   ! H2CO3*) is scaled by the DI14C/DIC ratio to give the surface 14CO2 concentration.
   ! The speciation calculation uses in situ temperature, salinity, ALK, PO4 and PO4*14.4 as a proxy for SiO4.
@@ -2706,7 +2725,7 @@ write (stdlogunit, generic_bling_nml)
     enddo; enddo ; !} i, j
 
 
-    call FMS_ocmip2_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
+    call FMS_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
          Temp(:,:,k), Salt(:,:,k),                    &
          bling%f_dic(:,:,k),                          &
          bling%f_po4(:,:,k),                          &  
@@ -2716,7 +2735,6 @@ write (stdlogunit, generic_bling_nml)
                                 !InOut
          bling%f_htotal(:,:,k),                       & 
                                 !Optional In
-         co2_calc=trim(co2_calc),                     & 
          zt=bling%zt(:,:,k),                          & 
                                 !OUT
          co2star=bling%co2_csurf(:,:), alpha=bling%co2_alpha(:,:), &
@@ -2731,7 +2749,7 @@ write (stdlogunit, generic_bling_nml)
           bling%htotalhi(i,j) = bling%htotal_scale_hi * bling%f_htotal(i,j,k)
        enddo; enddo ; !} i, j
   
-       call FMS_ocmip2_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
+       call FMS_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
             Temp(:,:,k), Salt(:,:,k),                    &
             bling%f_dic(:,:,k),                          &
             bling%f_po4(:,:,k),                          &  
@@ -2741,7 +2759,6 @@ write (stdlogunit, generic_bling_nml)
                                 !InOut
             bling%f_htotal(:,:,k),                       & 
                                 !Optional In
-            co2_calc=trim(co2_calc),                     & 
             zt=bling%zt(:,:,k),                          & 
                                 !OUT
             co3_ion=bling%f_co3_ion(:,:,k),              &
@@ -2778,7 +2795,7 @@ write (stdlogunit, generic_bling_nml)
     ! required in the surface layer (since the CO3= concentration related to 
     ! DIC_sat is not used).
  
-    call FMS_ocmip2_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
+    call FMS_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
          Temp(:,:,k), Salt(:,:,k),                       &
          bling%f_dic_sat(:,:,k),                         &
          bling%f_po4(:,:,k),                             &
@@ -2786,7 +2803,9 @@ write (stdlogunit, generic_bling_nml)
          bling%f_alk(:,:,k),                             &
          bling%htotal_satlo, bling%htotal_sathi,         &
                                 !InOut
-         bling%f_htotal_sat(:,:,k),                      & 
+         bling%f_htotal_sat(:,:,k),                      &
+                                !Optional In
+         zt=bling%zt(:,:,k),                             &
                                 !OUT
          co2star=bling%co2_sat_csurf(:,:),               &
          pCO2surf=bling%pco2_sat_csurf(:,:))
@@ -2797,7 +2816,7 @@ write (stdlogunit, generic_bling_nml)
           bling%htotal_sathi(i,j) = bling%htotal_scale_hi * bling%f_htotal_sat(i,j,k)
        enddo; enddo ; !} i, j
   
-       call FMS_ocmip2_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
+       call FMS_co2calc(CO2_dope_vec,grid_tmask(:,:,k),&
             Temp(:,:,k), Salt(:,:,k),                    &
             bling%f_dic_sat(:,:,k),                      &
             bling%f_po4(:,:,k),                          &  
@@ -2805,7 +2824,9 @@ write (stdlogunit, generic_bling_nml)
             bling%f_alk(:,:,k),                          &
             bling%htotal_satlo, bling%htotal_sathi,&
                                 !InOut
-            bling%f_htotal_sat(:,:,k))
+            bling%f_htotal_sat(:,:,k),                   &
+                                !Optional In
+            zt=bling%zt(:,:,k))
     enddo
 
     call g_tracer_set_values(tracer_list,'htotal_sat','field',bling%f_htotal_sat  ,isd,jsd,ntau=1)
@@ -3205,17 +3226,7 @@ write (stdlogunit, generic_bling_nml)
 
       do k = 1, nk ; do j = jsc, jec ; do i = isc, iec   !{
      
-        if (trim(co2_calc) == "ocmip2") then
-     ! Using Sayles for solubility (will change to Mucci later)
-          bling%co3_solubility(i,j,k) = max(4.95e-7 * exp ( 0.05021 / &
-            (Temp(i,j,k) + 273.15) * bling%zt(i,j,k)) * 3.42031e-3 *       &
-            bling%Rho_0 * bling%Rho_0 / max(epsln, Salt(i,j,k)),epsln)
-          bling%omega_calc(i,j,k) = bling%f_co3_ion(i,j,k) / bling%co3_solubility(i,j,k)
-        else if (trim(co2_calc) == "mocsy") then
-          bling%co3_solubility(i,j,k) = bling%f_co3_ion(i,j,k) / (epsln + bling%omega_calc(i,j,k))
-        else
-          call mpp_error(FATAL,"Unable to compute aragonite and calcite saturation states")
-        endif
+        bling%co3_solubility(i,j,k) = bling%f_co3_ion(i,j,k) / (epsln + bling%omega_calc(i,j,k))
 
           ! Calcite CaCO3 production is assumed to be proportional to both calcite supersaturation and
           ! microzooplankton grazing after the calcite formulation of Dunne et al. (2012)
@@ -4938,15 +4949,14 @@ write (stdlogunit, generic_bling_nml)
           bling%htotalhi(i,j) = bling%htotal_scale_hi * htotal_field(i,j,1)
        enddo; enddo ; !} i, j
 
-       if(present(dzt)) then
+       if(.not. present(dzt)) then
 !         do j = jsc, jec ; do i = isc, iec  !{
 !          bling%zt(i,j,1) = dzt(i,j,1)
 !         enddo; enddo ; !} i, j
-       elseif (trim(co2_calc) == 'mocsy') then
-         call mpp_error(FATAL,"mocsy method of co2_calc needs dzt to be passed to the FMS_ocmip2_co2calc subroutine.")
+         call mpp_error(FATAL,"mocsy method of co2_calc needs dzt to be passed to the FMS_co2calc subroutine.")
        endif
 
-       call FMS_ocmip2_co2calc(CO2_dope_vec,grid_tmask(:,:,1), &
+       call FMS_co2calc(CO2_dope_vec,grid_tmask(:,:,1), &
             SST(:,:), SSS(:,:),                            &
             dic_field(:,:,1),                              &
             po4_field(:,:,1),                              &
@@ -4956,7 +4966,6 @@ write (stdlogunit, generic_bling_nml)
                                 !InOut
             htotal_field(:,:,1),                           &
                                  !Optional In
-            co2_calc=trim(co2_calc),                       & 
             !zt=bling%zt(:,:,1),                            & 
             zt=dzt(:,:,1),                                 & 
                               !OUT
@@ -5012,14 +5021,22 @@ write (stdlogunit, generic_bling_nml)
        !---------------------------------------------------------------------
        !     CO2
        !---------------------------------------------------------------------
-
+  
        !---------------------------------------------------------------------
        !  Compute the Schmidt number of CO2 in seawater using the
        !  formulation presented by Wanninkhof (1992, J. Geophys. Res., 97,
        !  7373-7382).
        !---------------------------------------------------------------------
-       co2_sc_no(i,j) = bling%a1_co2 + ST * (bling%a2_co2 + ST * (bling%a3_co2 + ST * bling%a4_co2)) * &
+       if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
+         co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*bling%a4_co2)) * & 
             grid_tmask(i,j,1)
+         ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CNT entered W92 for CO2 SNo')
+       else if (trim(as_param_bling) == 'W14') then
+         co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + & 
+                                             ST*(bling%a4_co2 + ST*bling%a5_co2)  ) ) * &
+            grid_tmask(i,j,1)
+         ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CNT entered W14 for CO2 SNo')
+       endif
 !       sc_no_term = sqrt(660.0 / (sc_co2 + epsln))
 !
 !       co2_alpha(i,j) = co2_alpha(i,j)* sc_no_term * bling%Rho_0 !nnz: MOM has rho(i,j,1,tau)
@@ -5041,7 +5058,6 @@ write (stdlogunit, generic_bling_nml)
     call g_tracer_set_values(tracer_list,'dic','sc_no',co2_sc_no,isd,jsd)
 
     endif                                                     !CARBON CYCLE>>
-
 
     call g_tracer_get_values(tracer_list,'o2','alpha', o2_alpha ,isd,jsd)
     call g_tracer_get_values(tracer_list,'o2','csurf', o2_csurf ,isd,jsd)
@@ -5095,8 +5111,16 @@ write (stdlogunit, generic_bling_nml)
        ! In 'ocmip2_generic' atmos_ocean_fluxes.F90 coupler formulation,
        ! the schmidt number is carried in explicitly
        !
-       o2_sc_no(i,j)  = bling%a1_o2  + ST * (bling%a2_o2  + ST * (bling%a3_o2  + ST * bling%a4_o2 )) * &
+       if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
+         o2_sc_no(i,j)  = bling%a1_o2 + ST * (bling%a2_o2 + ST * (bling%a3_o2 + ST * bling%a4_o2 )) * &
             grid_tmask(i,j,1)
+         ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CCNT entered W92 for O2 SNo')
+       else if (trim(as_param_bling) == 'W14') then
+         o2_sc_no(i,j) = bling%a1_o2 + ST*(bling%a2_o2 + ST*(bling%a3_o2 + &
+                                            ST*(bling%a4_o2 + ST*bling%a5_o2)  ) ) * &
+            grid_tmask(i,j,1)
+         ! if (is_root_pe()) call mpp_error(NOTE,'generic_bling: CCNT entered W14 for O2 SNo')
+       endif
        !
        !      renormalize the alpha value for atm o2
        !      data table override for o2_flux_pcair_atm is now set to 0.21
@@ -5127,9 +5151,15 @@ write (stdlogunit, generic_bling_nml)
          !---------------------------------------------------------------------
 
          sal = SSS(i,j) ; ST = SST(i,j)
-         co2_sc_no(i,j) = bling%a1_co2 + ST * (bling%a2_co2 + ST * (bling%a3_co2 + ST * bling%a4_co2)) * &
-            grid_tmask(i,j,1)
-       
+         if ((trim(as_param_bling) == 'W92') .or. (trim(as_param_bling) == 'gfdl_cmip6')) then
+           co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + ST*bling%a4_co2)) * & 
+              grid_tmask(i,j,1)
+         else if (trim(as_param_bling) == 'W14') then
+           co2_sc_no(i,j) = bling%a1_co2 + ST*(bling%a2_co2 + ST*(bling%a3_co2 + & 
+                                               ST*(bling%a4_co2 + ST*bling%a5_co2)  ) ) * &
+              grid_tmask(i,j,1)
+         endif
+
          c14o2_alpha(i,j) = c14o2_alpha(i,j) * bling%Rho_0 
          c14o2_csurf(i,j) = c14o2_csurf(i,j) * bling%Rho_0 
 
@@ -5258,7 +5288,7 @@ write (stdlogunit, generic_bling_nml)
     endif                                                  !PO4_PRE>>
 
     if (do_carbon) then                                    !<<CARBON CYCLE
-    !Used in ocmip2_co2calc
+    !Used in FMS_co2calc
     CO2_dope_vec%isc = isc ; CO2_dope_vec%iec = iec 
     CO2_dope_vec%jsc = jsc ; CO2_dope_vec%jec = jec
     CO2_dope_vec%isd = isd ; CO2_dope_vec%ied = ied

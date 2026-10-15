@@ -40,7 +40,8 @@ module FMS_ocmip2_co2calc_mod  !{
 !
 
 use fm_util_mod, only: fm_util_start_namelist, fm_util_end_namelist
-use fms_mod,     only: open_namelist_file, check_nml_error, close_file
+! MOM6COMPAT: open_namelist_file/close_file no longer exist in FMS (only used without INTERNAL_FILE_NML)
+use fms_mod,     only: check_nml_error
 use mpp_mod,     only: input_nml_file, mpp_error, stdout, stdlog, WARNING, FATAL
 use mocsy_vars,  only: vars
 
